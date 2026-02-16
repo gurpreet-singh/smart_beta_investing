@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             button.classList.add('active');
             document.getElementById(`${targetTab}-tab`).classList.add('active');
 
-            // Resize Plotly charts when switching to portfolio tab
+            // Resize Plotly charts when switching tabs (charts rendered in hidden tabs have incorrect dimensions)
             if (targetTab === 'portfolio') {
                 setTimeout(() => {
                     const chartIds = ['chart-nav', 'chart-sip-value', 'chart-drawdown',
@@ -35,12 +35,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }, 100);
             }
+
+            if (targetTab === 'nifty500-portfolio') {
+                setTimeout(() => {
+                    const chartIds = ['nifty500-chart-nav', 'nifty500-chart-sip-value', 'nifty500-chart-drawdown',
+                        'nifty500-chart-rolling', 'nifty500-chart-attribution', 'nifty500-chart-alpha'];
+                    chartIds.forEach(id => {
+                        const elem = document.getElementById(id);
+                        if (elem && elem.layout) {
+                            Plotly.Plots.resize(elem);
+                        }
+                    });
+                }, 100);
+            }
+
+            if (targetTab === 'nifty500-indices') {
+                setTimeout(() => {
+                    const chartIds = ['nifty500-momentum-chart', 'nifty500-value-chart', 'nifty500-ratio-chart'];
+                    chartIds.forEach(id => {
+                        const elem = document.getElementById(id);
+                        if (elem && elem.layout) {
+                            Plotly.Plots.resize(elem);
+                        }
+                    });
+                }, 100);
+            }
         });
     });
 
-    // Load both tabs' data
+    // Load all tabs' data
     loadIndicesData();
     loadPortfolioData();
+    loadNifty500IndicesData();
+    loadNifty500PortfolioData();
 });
 
 // ==========================================
@@ -52,12 +79,6 @@ async function loadIndicesData() {
         const response = await fetch('../output/monthly/dashboard_data.json');
         const data = await response.json();
 
-        // Update total portfolio summary
-        const totalInvested = data.indices.reduce((sum, idx) => sum + idx.total_invested, 0);
-        const totalValue = data.indices.reduce((sum, idx) => sum + idx.final_value, 0);
-
-        document.getElementById('total-invested').textContent = `₹${formatNumber(totalInvested)}`;
-        document.getElementById('total-value').textContent = `₹${formatNumber(totalValue)}`;
 
         // Render individual index cards
         renderIndices(data.indices);
@@ -202,13 +223,14 @@ function renderIndexChart(containerId, dates, closeValues, maValues, indexName, 
         type: 'scatter',
         mode: 'lines',
         name: '30-Week MA',
-        line: { color: '#f59e0b', width: 3, dash: 'solid' },
+        line: { color: '#f59e0b', width: 1, dash: 'solid' },
         hovertemplate: '<b>Date:</b> %{x}<br>' +
             '<b>30W MA:</b> %{y:.2f}<br>' +
             '<extra></extra>'
     };
 
     const layout = {
+        autosize: true,
         xaxis: {
             title: 'Date',
             showgrid: true,
@@ -233,18 +255,9 @@ function renderIndexChart(containerId, dates, closeValues, maValues, indexName, 
             font_size: 14,
             font_family: 'Inter'
         },
-        height: 400,
         margin: { l: 60, r: 40, t: 20, b: 60 },
         showlegend: true,
-        legend: {
-            orientation: 'h',
-            x: 0.5,
-            xanchor: 'center',
-            y: 1.05,
-            bgcolor: 'rgba(15, 23, 42, 0.8)',
-            bordercolor: '#334155',
-            borderwidth: 1
-        }
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
     };
 
     const config = { responsive: true, displayModeBar: true };
@@ -476,21 +489,52 @@ function renderPortfolioCharts(charts) {
 }
 
 function renderCalendarReturns(calendarReturns) {
-    const container = document.getElementById('calendar-returns');
-    container.innerHTML = '';
+    const table = document.getElementById('calendar-returns');
 
-    calendarReturns.forEach(yearData => {
-        const yearCard = document.createElement('div');
-        const returnClass = yearData.Return >= 0 ? 'positive' : 'negative';
-        yearCard.className = `calendar-year ${returnClass}`;
+    const formatReturn = (val) => {
+        const sign = val >= 0 ? '+' : '';
+        const cls = val >= 0 ? 'positive' : 'negative';
+        return `<span class="return-value ${cls}">${sign}${val.toFixed(1)}%</span>`;
+    };
 
-        yearCard.innerHTML = `
-            <div class="calendar-year-label">${yearData.Year}</div>
-            <div class="calendar-year-value">${yearData.Return >= 0 ? '+' : ''}${yearData.Return.toFixed(1)}%</div>
+    const findBest = (row) => {
+        const vals = [
+            { name: 'Strategy', val: row.Return },
+            { name: 'Mom 30', val: row.Mom_Return },
+            { name: 'Val 30', val: row.Val_Return }
+        ];
+        return vals.reduce((best, curr) => curr.val > best.val ? curr : best).name;
+    };
+
+    let html = `
+        <thead>
+            <tr>
+                <th>Year</th>
+                <th>Strategy</th>
+                <th>Momentum 30</th>
+                <th>Value 30</th>
+                <th>Best</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    calendarReturns.forEach(row => {
+        const best = findBest(row);
+        const strategyBest = best === 'Strategy' ? ' best-performer' : '';
+        html += `
+            <tr>
+                <td class="year-cell">${row.Year}</td>
+                <td class="${strategyBest}">${formatReturn(row.Return)}</td>
+                <td class="${best === 'Mom 30' ? ' best-performer' : ''}">${formatReturn(row.Mom_Return)}</td>
+                <td class="${best === 'Val 30' ? ' best-performer' : ''}">${formatReturn(row.Val_Return)}</td>
+                <td class="best-cell">${best}</td>
+            </tr>
         `;
-
-        container.appendChild(yearCard);
     });
+
+    html += '</tbody>';
+    table.innerHTML = html;
 }
 
 // ==========================================
@@ -578,4 +622,494 @@ function formatNumber(num) {
     } else {
         return num.toFixed(0);
     }
+}
+
+// ==========================================
+// NIFTY 500 INDIVIDUAL INDICES TAB
+// ==========================================
+
+async function loadNifty500IndicesData() {
+    try {
+        const response = await fetch('../nifty500/output/nifty500_dashboard_data.json');
+        const data = await response.json();
+
+
+        // Render individual index cards
+        renderNifty500Indices(data.indices);
+
+        // Load and render charts
+        loadNifty500IndividualIndexCharts();
+        loadNifty500RatioChart();
+
+        // Update insights
+        updateNifty500Insights(data.indices);
+    } catch (error) {
+        console.error('Error loading Nifty 500 indices data:', error);
+    }
+}
+
+function renderNifty500Indices(indices) {
+    const container = document.getElementById('nifty500-indices-container');
+    container.innerHTML = '';
+
+    indices.forEach(index => {
+        const card = document.createElement('div');
+        card.className = 'index-card';
+        card.innerHTML = `
+            <div class="index-header">
+                <h3 class="index-name">${index.name}</h3>
+            </div>
+            <div class="index-metrics">
+                <div class="metric-row">
+                    <span class="metric-label">SIP XIRR</span>
+                    <span class="metric-value highlight">${index.sip_xirr.toFixed(2)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Index CAGR</span>
+                    <span class="metric-value">${index.index_cagr.toFixed(2)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Total Return</span>
+                    <span class="metric-value">${index.total_return.toFixed(2)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Invested</span>
+                    <span class="metric-value">₹${index.total_invested.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Value</span>
+                    <span class="metric-value success">₹${index.final_value.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Gain</span>
+                    <span class="metric-value success">+₹${index.absolute_gain.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Max Drawdown</span>
+                    <span class="metric-value danger">${index.max_drawdown.toFixed(2)}%</span>
+                </div>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+async function loadNifty500IndividualIndexCharts() {
+    try {
+        const response = await fetch('../nifty500/output/nifty500_dashboard_data.json');
+        const data = await response.json();
+
+        if (!data.weekly_charts) {
+            console.error('Weekly chart data not available for Nifty 500');
+            return;
+        }
+
+        const weeklyData = data.weekly_charts;
+
+        // Render Momentum 50 Chart
+        renderIndexChart(
+            'nifty500-momentum-chart',
+            weeklyData.momentum.dates,
+            weeklyData.momentum.close,
+            weeklyData.momentum.ma_30,
+            'Momentum 50 Index',
+            '#8b5cf6'
+        );
+
+        // Render Value 50 Chart
+        renderIndexChart(
+            'nifty500-value-chart',
+            weeklyData.value.dates,
+            weeklyData.value.close,
+            weeklyData.value.ma_30,
+            'Value 50 Index',
+            '#10b981'
+        );
+
+    } catch (error) {
+        console.error('Error loading Nifty 500 individual index charts:', error);
+    }
+}
+
+async function loadNifty500RatioChart() {
+    try {
+        const response = await fetch('../nifty500/output/nifty500_dashboard_data.json');
+        const data = await response.json();
+
+        if (!data.weekly_charts || !data.weekly_charts.ratio) {
+            console.error('Ratio chart data not available for Nifty 500');
+            return;
+        }
+
+        const ratioData = data.weekly_charts.ratio;
+
+        const ratioTrace = {
+            x: ratioData.dates,
+            y: ratioData.ratio,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Momentum/Value Ratio',
+            line: { color: '#3b82f6', width: 2 }
+        };
+
+        const maTrace = {
+            x: ratioData.dates,
+            y: ratioData.ma_30,
+            type: 'scatter',
+            mode: 'lines',
+            name: '30-Week MA',
+            line: { color: '#f59e0b', width: 1 }
+        };
+
+        const layout = {
+            autosize: true,
+            xaxis: { title: 'Date', showgrid: true, gridcolor: '#1e293b', color: '#94a3b8' },
+            yaxis: { title: 'Ratio', showgrid: true, gridcolor: '#1e293b', color: '#94a3b8' },
+            plot_bgcolor: '#0f172a',
+            paper_bgcolor: '#0f172a',
+            font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+            hovermode: 'x unified',
+            margin: { l: 60, r: 40, t: 20, b: 60 },
+            showlegend: true,
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
+        };
+
+        Plotly.newPlot('nifty500-ratio-chart', [ratioTrace, maTrace], layout, { responsive: true });
+
+    } catch (error) {
+        console.error('Error loading Nifty 500 ratio chart:', error);
+    }
+}
+
+function updateNifty500Insights(indices) {
+    const bestPerformer = indices.reduce((best, current) =>
+        current.sip_xirr > best.sip_xirr ? current : best
+    );
+
+    const lowestDD = indices.reduce((best, current) =>
+        current.max_drawdown > best.max_drawdown ? current : best
+    );
+
+    document.getElementById('nifty500-best-performer').textContent =
+        `${bestPerformer.name} with ${bestPerformer.sip_xirr.toFixed(2)}% XIRR`;
+
+    document.getElementById('nifty500-lowest-dd').textContent =
+        `${lowestDD.name} with ${lowestDD.max_drawdown.toFixed(2)}% max drawdown`;
+}
+
+// ==========================================
+// NIFTY 500 PORTFOLIO STRATEGY TAB
+// ==========================================
+
+async function loadNifty500PortfolioData() {
+    try {
+        const response = await fetch('../nifty500/output/nifty500_portfolio_dashboard.json');
+        const data = await response.json();
+
+        // Update KPIs
+        document.getElementById('nifty500-kpi-xirr').textContent = `${data.kpis.sip_xirr}%`;
+        document.getElementById('nifty500-kpi-cagr').textContent = `${data.kpis.cagr}%`;
+        document.getElementById('nifty500-kpi-investor-dd').textContent = `${data.kpis.max_investor_dd}%`;
+        document.getElementById('nifty500-kpi-max-dd').textContent = `${data.kpis.max_drawdown}%`;
+        document.getElementById('nifty500-kpi-mar').textContent = data.kpis.mar_ratio.toFixed(2);
+        document.getElementById('nifty500-kpi-vol').textContent = `${data.kpis.volatility.toFixed(1)}%`;
+        document.getElementById('nifty500-kpi-total-return').textContent = `${data.kpis.total_return_pct}%`;
+        document.getElementById('nifty500-kpi-time-momentum').textContent = `${data.kpis.pct_time_momentum}%`;
+
+        // Render charts
+        renderNifty500NAVChart(data.charts.nav_series);
+        renderNifty500SIPValueChart(data.charts.sip_value_series);
+        renderNifty500DrawdownChart(data.charts.drawdown_series);
+        renderNifty500AllocationTable(data.charts.allocation_series);
+        renderNifty500RollingReturns(data.charts.rolling_returns);
+        renderNifty500Attribution(data.charts.attribution);
+        renderNifty500Alpha(data.charts.alpha);
+        renderNifty500CalendarReturns(data.calendar_returns);
+
+    } catch (error) {
+        console.error('Error loading Nifty 500 portfolio data:', error);
+    }
+}
+
+function renderNifty500NAVChart(data) {
+    const trace = {
+        x: data.dates,
+        y: data.nav,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Portfolio NAV',
+        line: { color: '#3b82f6', width: 2 }
+    };
+
+    const layout = {
+        autosize: true,
+        xaxis: { title: 'Date', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        yaxis: { title: 'NAV', type: 'log', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        plot_bgcolor: '#0f172a',
+        paper_bgcolor: '#0f172a',
+        font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 20, b: 60 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
+    };
+
+    Plotly.newPlot('nifty500-chart-nav', [trace], layout, { responsive: true });
+}
+
+function renderNifty500SIPValueChart(data) {
+    const investedTrace = {
+        x: data.dates,
+        y: data.invested,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Total Invested',
+        line: { color: '#94a3b8', width: 2, dash: 'dash' }
+    };
+
+    const valueTrace = {
+        x: data.dates,
+        y: data.value,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Portfolio Value',
+        line: { color: '#10b981', width: 3 }
+    };
+
+    const layout = {
+        autosize: true,
+        xaxis: { title: 'Date', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        yaxis: { title: 'Amount (₹)', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        plot_bgcolor: '#0f172a',
+        paper_bgcolor: '#0f172a',
+        font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 20, b: 60 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
+    };
+
+    Plotly.newPlot('nifty500-chart-sip-value', [investedTrace, valueTrace], layout, { responsive: true });
+}
+
+function renderNifty500DrawdownChart(data) {
+    const strategyTrace = {
+        x: data.dates,
+        y: data.strategy_dd,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Strategy',
+        line: { color: '#3b82f6', width: 2 },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(59, 130, 246, 0.2)'
+    };
+
+    const momTrace = {
+        x: data.dates,
+        y: data.momentum_dd,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Momentum 50',
+        line: { color: '#8b5cf6', width: 1.5 }
+    };
+
+    const valTrace = {
+        x: data.dates,
+        y: data.value_dd,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Value 50',
+        line: { color: '#10b981', width: 1.5 }
+    };
+
+    const layout = {
+        autosize: true,
+        xaxis: { title: 'Date', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        yaxis: { title: 'Drawdown (%)', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        plot_bgcolor: '#0f172a',
+        paper_bgcolor: '#0f172a',
+        font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 20, b: 60 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
+    };
+
+    Plotly.newPlot('nifty500-chart-drawdown', [strategyTrace, momTrace, valTrace], layout, { responsive: true });
+}
+
+function renderNifty500AllocationTable(data) {
+    const container = document.getElementById('nifty500-allocation-table-container');
+    const recentData = data.dates.slice(-12).map((date, idx) => ({
+        date,
+        momentum: data.momentum.slice(-12)[idx],
+        value: data.value.slice(-12)[idx],
+        regime: data.regime.slice(-12)[idx]
+    }));
+
+    container.innerHTML = `
+        <table class="allocation-table">
+            <thead>
+                <tr><th>Date</th><th>Momentum</th><th>Value</th><th>Regime</th></tr>
+            </thead>
+            <tbody>
+                ${recentData.map(row => `
+                    <tr>
+                        <td>${row.date}</td>
+                        <td>${row.momentum.toFixed(0)}%</td>
+                        <td>${row.value.toFixed(0)}%</td>
+                        <td class="${row.regime.toLowerCase()}">${row.regime}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function renderNifty500RollingReturns(data) {
+    const trace3y = {
+        x: data.dates,
+        y: data.rolling_3y,
+        type: 'scatter',
+        mode: 'lines',
+        name: '3-Year Rolling',
+        line: { color: '#3b82f6', width: 2 }
+    };
+
+    const trace5y = {
+        x: data.dates,
+        y: data.rolling_5y,
+        type: 'scatter',
+        mode: 'lines',
+        name: '5-Year Rolling',
+        line: { color: '#10b981', width: 2 }
+    };
+
+    const layout = {
+        autosize: true,
+        xaxis: { title: 'Date', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        yaxis: { title: 'CAGR (%)', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        plot_bgcolor: '#0f172a',
+        paper_bgcolor: '#0f172a',
+        font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 20, b: 60 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
+    };
+
+    Plotly.newPlot('nifty500-chart-rolling', [trace3y, trace5y], layout, { responsive: true });
+}
+
+function renderNifty500Attribution(data) {
+    const momTrace = {
+        x: data.dates,
+        y: data.mom_contrib,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Momentum',
+        line: { color: '#8b5cf6', width: 2 }
+    };
+
+    const valTrace = {
+        x: data.dates,
+        y: data.val_contrib,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Value',
+        line: { color: '#10b981', width: 2 }
+    };
+
+    const layout = {
+        autosize: true,
+        xaxis: { title: 'Date', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        yaxis: { title: 'Cumulative Contribution (%)', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        plot_bgcolor: '#0f172a',
+        paper_bgcolor: '#0f172a',
+        font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 20, b: 60 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
+    };
+
+    Plotly.newPlot('nifty500-chart-attribution', [momTrace, valTrace], layout, { responsive: true });
+}
+
+function renderNifty500Alpha(data) {
+    const strategyTrace = {
+        x: data.dates,
+        y: data.strategy_nav,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Strategy NAV',
+        line: { color: '#3b82f6', width: 2 }
+    };
+
+    const staticTrace = {
+        x: data.dates,
+        y: data.static_nav,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Static 50/50',
+        line: { color: '#94a3b8', width: 2, dash: 'dash' }
+    };
+
+    const layout = {
+        autosize: true,
+        xaxis: { title: 'Date', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        yaxis: { title: 'NAV', type: 'log', color: '#94a3b8', showgrid: true, gridcolor: '#1e293b', autorange: true },
+        plot_bgcolor: '#0f172a',
+        paper_bgcolor: '#0f172a',
+        font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+        margin: { l: 60, r: 40, t: 20, b: 60 },
+        showlegend: true,
+        legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: 1.05, yanchor: 'bottom' }
+    };
+
+    Plotly.newPlot('nifty500-chart-alpha', [strategyTrace, staticTrace], layout, { responsive: true });
+}
+
+function renderNifty500CalendarReturns(returns) {
+    const table = document.getElementById('nifty500-calendar-returns');
+
+    const formatReturn = (val) => {
+        const sign = val >= 0 ? '+' : '';
+        const cls = val >= 0 ? 'positive' : 'negative';
+        return `<span class="return-value ${cls}">${sign}${val.toFixed(1)}%</span>`;
+    };
+
+    const findBest = (row) => {
+        const vals = [
+            { name: 'Strategy', val: row.Return },
+            { name: 'Mom 50', val: row.Mom_Return },
+            { name: 'Val 50', val: row.Val_Return }
+        ];
+        return vals.reduce((best, curr) => curr.val > best.val ? curr : best).name;
+    };
+
+    let html = `
+        <thead>
+            <tr>
+                <th>Year</th>
+                <th>Strategy</th>
+                <th>Momentum 50</th>
+                <th>Value 50</th>
+                <th>Best</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    returns.forEach(row => {
+        const best = findBest(row);
+        const strategyBest = best === 'Strategy' ? ' best-performer' : '';
+        html += `
+            <tr>
+                <td class="year-cell">${row.Year}</td>
+                <td class="${strategyBest}">${formatReturn(row.Return)}</td>
+                <td class="${best === 'Mom 50' ? ' best-performer' : ''}">${formatReturn(row.Mom_Return)}</td>
+                <td class="${best === 'Val 50' ? ' best-performer' : ''}">${formatReturn(row.Val_Return)}</td>
+                <td class="best-cell">${best}</td>
+            </tr>
+        `;
+    });
+
+    html += '</tbody>';
+    table.innerHTML = html;
 }

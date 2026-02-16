@@ -155,16 +155,31 @@ class PortfolioAnalytics:
         return kpis
     
     def generate_calendar_returns(self):
-        """Generate calendar year returns heatmap data"""
+        """Generate calendar year returns comparison data (strategy vs individual indices)"""
         df = self.master_df
         
-        # Group by year and calculate annual returns
-        yearly_returns = df.groupby('Year')['Portfolio_Return'].apply(
+        # Strategy returns by year
+        strategy_returns = df.groupby('Year')['Portfolio_Return'].apply(
             lambda x: ((1 + x).prod() - 1) * 100
         ).reset_index()
-        yearly_returns.columns = ['Year', 'Return']
+        strategy_returns.columns = ['Year', 'Return']
         
-        return yearly_returns.to_dict('records')
+        # Momentum index returns by year
+        mom_returns = df.groupby('Year')['Return_mom'].apply(
+            lambda x: ((1 + x).prod() - 1) * 100
+        ).reset_index()
+        mom_returns.columns = ['Year', 'Mom_Return']
+        
+        # Value index returns by year
+        val_returns = df.groupby('Year')['Return_val'].apply(
+            lambda x: ((1 + x).prod() - 1) * 100
+        ).reset_index()
+        val_returns.columns = ['Year', 'Val_Return']
+        
+        # Merge all
+        merged = strategy_returns.merge(mom_returns, on='Year').merge(val_returns, on='Year')
+        
+        return merged.to_dict('records')
     
     def generate_allocation_histogram(self):
         """Generate allocation distribution data"""

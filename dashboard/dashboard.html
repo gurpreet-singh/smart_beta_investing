@@ -25,26 +25,14 @@
 
         <!-- Tab Navigation -->
         <nav class="tab-nav">
-            <button class="tab-button active" data-tab="indices">📊 Individual Indices</button>
-            <button class="tab-button" data-tab="portfolio">🎯 Portfolio Strategy</button>
+            <button class="tab-button active" data-tab="indices">📊 Nifty 200 Indices</button>
+            <button class="tab-button" data-tab="portfolio">🎯 Nifty 200 Strategy</button>
+            <button class="tab-button" data-tab="nifty500-indices">📈 Nifty 500 Indices</button>
+            <button class="tab-button" data-tab="nifty500-portfolio">💎 Nifty 500 Strategy</button>
         </nav>
 
         <!-- Tab Content: Individual Indices -->
         <div id="indices-tab" class="tab-content active">
-            <!-- Portfolio Summary -->
-            <section class="portfolio-summary">
-                <div class="summary-card total">
-                    <div class="card-header">
-                        <h3>Total Portfolio</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-value" id="total-invested">Loading...</div>
-                        <div class="metric-label">Total Invested</div>
-                        <div class="metric-value highlight" id="total-value">Loading...</div>
-                        <div class="metric-label">Current Value</div>
-                    </div>
-                </div>
-            </section>
 
             <!-- Individual Indices -->
             <section class="indices-section">
@@ -190,14 +178,153 @@
                 </div>
             </section>
 
-            <!-- Calendar Returns -->
+            <!-- Calendar Returns Comparison Table -->
             <section class="calendar-section">
-                <h2 class="section-title">Calendar Year Returns</h2>
-                <div id="calendar-returns" class="calendar-grid"><!-- Populated by JS --></div>
+                <h2 class="section-title">Calendar Year Returns Comparison</h2>
+                <div class="returns-table-container">
+                    <table id="calendar-returns" class="returns-comparison-table">
+                        <!-- Populated by JS -->
+                    </table>
+                </div>
             </section>
         </div>
 
         <!-- Footer -->
+
+        <!-- Tab Content: Nifty 500 Individual Indices -->
+        <div id="nifty500-indices-tab" class="tab-content">
+
+            <section class="indices-section">
+                <h2 class="section-title">Individual Index Performance (Nifty 500)</h2>
+                <div class="indices-grid" id="nifty500-indices-container"></div>
+            </section>
+            <section class="chart-section">
+                <h2 class="section-title">Momentum 50 Index (Weekly with 30-Week MA)</h2>
+                <div class="chart-card">
+                    <div id="nifty500-momentum-chart" class="index-chart-container"></div>
+                </div>
+            </section>
+            <section class="chart-section">
+                <h2 class="section-title">Value 50 Index (Weekly with 30-Week MA)</h2>
+                <div class="chart-card">
+                    <div id="nifty500-value-chart" class="index-chart-container"></div>
+                </div>
+            </section>
+            <section class="chart-section">
+                <h2 class="section-title">Momentum/Value Ratio Analysis (Nifty 500)</h2>
+                <div class="chart-card">
+                    <div id="nifty500-ratio-chart" class="ratio-chart-container"></div>
+                </div>
+            </section>
+            <section class="insights-section">
+                <h2 class="section-title">Key Insights</h2>
+                <div class="insights-grid">
+                    <div class="insight-card">
+                        <h3>🎯 Best Performer</h3>
+                        <p id="nifty500-best-performer">Loading...</p>
+                    </div>
+                    <div class="insight-card">
+                        <h3>⚡ Lowest Drawdown</h3>
+                        <p id="nifty500-lowest-dd">Loading...</p>
+                    </div>
+                    <div class="insight-card">
+                        <h3>📈 Strategy</h3>
+                        <p>Monthly SIP of ₹10,000 per index in Nifty 500 Smart Beta indices</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab Content: Nifty 500 Portfolio Strategy -->
+        <div id="nifty500-portfolio-tab" class="tab-content">
+            <section class="kpi-section">
+                <h2 class="section-title">Portfolio Performance (Nifty 500)</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-card primary">
+                        <div class="kpi-label">SIP XIRR</div>
+                        <div class="kpi-value" id="nifty500-kpi-xirr">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Strategy CAGR</div>
+                        <div class="kpi-value" id="nifty500-kpi-cagr">--</div>
+                    </div>
+                    <div class="kpi-card success">
+                        <div class="kpi-label">Investor Drawdown</div>
+                        <div class="kpi-value" id="nifty500-kpi-investor-dd">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Max Drawdown</div>
+                        <div class="kpi-value" id="nifty500-kpi-max-dd">--</div>
+                    </div>
+                    <div class="kpi-card highlight">
+                        <div class="kpi-label">MAR Ratio</div>
+                        <div class="kpi-value" id="nifty500-kpi-mar">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Volatility</div>
+                        <div class="kpi-value" id="nifty500-kpi-vol">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Total Return</div>
+                        <div class="kpi-value" id="nifty500-kpi-total-return">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">% Time Momentum</div>
+                        <div class="kpi-value" id="nifty500-kpi-time-momentum">--</div>
+                    </div>
+                </div>
+            </section>
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Portfolio NAV Growth</h3>
+                        <div id="nifty500-chart-nav" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">SIP Portfolio Value</h3>
+                        <div id="nifty500-chart-sip-value" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+            <section class="charts-section">
+                <div class="chart-container full-width">
+                    <h3 class="chart-title">Underwater Drawdown Chart</h3>
+                    <div id="nifty500-chart-drawdown" class="chart-plot"></div>
+                </div>
+            </section>
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Dynamic Allocation (Momentum/Value)</h3>
+                        <div id="nifty500-allocation-table-container" class="allocation-table-wrapper"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Rolling Returns (3Y & 5Y)</h3>
+                        <div id="nifty500-chart-rolling" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Factor Attribution</h3>
+                        <div id="nifty500-chart-attribution" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Alpha vs Static 50/50</h3>
+                        <div id="nifty500-chart-alpha" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+            <section class="calendar-section">
+                <h2 class="section-title">Calendar Year Returns Comparison (Nifty 500)</h2>
+                <div class="returns-table-container">
+                    <table id="nifty500-calendar-returns" class="returns-comparison-table">
+                        <!-- Populated by JS -->
+                    </table>
+                </div>
+            </section>
+        </div>
         <footer class="footer">
             <p>Data: NSE India | Analysis Period: April 2005 - December 2025 | Monthly SIP: ₹10,000</p>
             <p>Past performance is not indicative of future results. This is for educational purposes only.</p>

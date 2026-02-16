@@ -131,7 +131,7 @@ class RatioAnalyzer:
             y=ma_30_list,
             mode='lines',
             name='30-Week MA',
-            line=dict(color='#f59e0b', width=3, dash='solid'),
+            line=dict(color='#f59e0b', width=1, dash='solid'),
             hovertemplate='<b>Date:</b> %{x|%d %b %Y}<br>' +
                           '<b>30W MA:</b> %{y:.4f}<br>' +
                           '<extra></extra>'
@@ -186,7 +186,15 @@ class RatioAnalyzer:
                 font_family='Inter'
             ),
             height=500,
-            margin=dict(l=60, r=60, t=80, b=60)
+            margin=dict(l=60, r=60, t=80, b=60),
+            showlegend=True,
+            legend=dict(
+                orientation='h',
+                x=0.5,
+                xanchor='center',
+                y=1.05,
+                yanchor='bottom'
+            )
         )
         
         # Linear scale for ratio (removed log scale per user request)

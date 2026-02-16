@@ -638,9 +638,9 @@ body {
 }
 
 .chart-plot {
-    min-height: 500px;
+    min-height: 600px;
     /* Larger charts */
-    height: 500px;
+    height: 600px;
     width: 100%;
     /* Force full width */
 }
@@ -653,53 +653,90 @@ body {
     margin-bottom: 3rem;
 }
 
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 1rem;
+/* Returns Comparison Table */
+.returns-table-container {
     margin-top: 1.5rem;
-}
-
-.calendar-year {
-    background: var(--card-bg);
     border-radius: 12px;
-    padding: 1rem;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+
+.returns-comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.returns-comparison-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.returns-comparison-table th {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 0.9rem 1.2rem;
     text-align: center;
-    border: 2px solid var(--border-color);
-    transition: all 0.3s ease;
+    border-bottom: 2px solid var(--accent-blue);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.calendar-year:hover {
-    transform: scale(1.05);
+.returns-comparison-table td {
+    padding: 0.7rem 1.2rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    transition: background 0.2s ease;
 }
 
-.calendar-year.positive {
-    border-color: var(--accent-green);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+.returns-comparison-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.08);
 }
 
-.calendar-year.negative {
-    border-color: var(--accent-red);
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+.returns-comparison-table tbody tr:nth-child(even) {
+    background: rgba(30, 41, 59, 0.4);
 }
 
-.calendar-year-label {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
+.returns-comparison-table tbody tr:nth-child(even):hover {
+    background: rgba(99, 102, 241, 0.12);
 }
 
-.calendar-year-value {
-    font-size: 1.5rem;
+.returns-comparison-table .year-cell {
     font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1rem;
 }
 
-.calendar-year.positive .calendar-year-value {
+.returns-comparison-table .return-value {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.returns-comparison-table .return-value.positive {
     color: var(--accent-green);
 }
 
-.calendar-year.negative .calendar-year-value {
+.returns-comparison-table .return-value.negative {
     color: var(--accent-red);
+}
+
+.returns-comparison-table .best-performer {
+    background: rgba(250, 204, 21, 0.08);
+    position: relative;
+}
+
+.returns-comparison-table .best-performer .return-value {
+    font-weight: 800;
+}
+
+.returns-comparison-table .best-cell {
+    font-weight: 600;
+    color: #facc15;
+    font-size: 0.85rem;
 }
 
 /* ==========================================
