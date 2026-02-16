@@ -1,0 +1,837 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --dark-bg: #0f172a;
+    --card-bg: #1e293b;
+    --card-hover: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+    --accent-purple: #8b5cf6;
+    --accent-green: #10b981;
+    --accent-red: #ef4444;
+    --accent-blue: #3b82f6;
+    --accent-orange: #f59e0b;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--dark-bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header */
+.header {
+    text-align: center;
+    padding: 3rem 0;
+    margin-bottom: 3rem;
+    background: var(--primary-gradient);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+    animation: fadeInDown 0.8s ease-out;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header-content {
+    padding: 0 2rem;
+}
+
+.title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, #fff, #e0e7ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+}
+
+/* Portfolio Summary */
+.portfolio-summary {
+    margin-bottom: 3rem;
+    animation: fadeIn 1s ease-out 0.2s both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.summary-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 2.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.card-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    background: var(--success-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.metric-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.metric .label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.metric .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.metric .value.highlight {
+    background: var(--success-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.metric .value.gain {
+    color: var(--accent-green);
+}
+
+.metric .value.percent {
+    color: var(--accent-purple);
+}
+
+/* Section Titles */
+.section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+    animation: fadeIn 1s ease-out 0.3s both;
+}
+
+/* Indices Grid */
+.indices-section {
+    margin-bottom: 3rem;
+}
+
+.indices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    animation: fadeIn 1s ease-out 0.4s both;
+}
+
+/* Ratio Chart Section */
+.chart-section {
+    margin-bottom: 3rem;
+    animation: fadeIn 1s ease-out 0.5s both;
+}
+
+.chart-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+}
+
+.ratio-chart-container {
+    min-height: 500px;
+    margin-bottom: 1rem;
+}
+
+.chart-note {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 10px;
+    border-left: 4px solid var(--accent-purple);
+}
+
+.index-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.index-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-gradient);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.index-card:hover::before {
+    transform: scaleX(1);
+}
+
+.index-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+    background: var(--card-hover);
+}
+
+.index-card:nth-child(2)::before {
+    background: var(--success-gradient);
+}
+
+.index-card:nth-child(3)::before {
+    background: var(--warning-gradient);
+}
+
+.index-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.metric-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.metric-row .label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.metric-row .value {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.metric-row.primary .value {
+    color: var(--accent-purple);
+}
+
+.metric-row.success .value {
+    color: var(--accent-green);
+}
+
+.metric-row.danger .value {
+    color: var(--accent-red);
+}
+
+.metric-row.info .value {
+    color: var(--accent-blue);
+}
+
+.metric-row.warning .value {
+    color: var(--accent-orange);
+}
+
+
+/* Comparison Table */
+.comparison-section {
+    margin-bottom: 3rem;
+    animation: fadeIn 1s ease-out 0.5s both;
+}
+
+.table-container {
+    background: var(--card-bg);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comparison-table thead {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+.comparison-table th {
+    padding: 1.25rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--accent-purple);
+}
+
+.comparison-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s ease;
+}
+
+.comparison-table tbody tr:hover {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.comparison-table td {
+    padding: 1.25rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.comparison-table td:first-child {
+    font-weight: 600;
+    color: var(--accent-purple);
+}
+
+.positive {
+    color: var(--accent-green) !important;
+    font-weight: 600;
+}
+
+.negative {
+    color: var(--accent-red) !important;
+    font-weight: 600;
+}
+
+/* Insights */
+.insights-section {
+    margin-bottom: 3rem;
+    animation: fadeIn 1s ease-out 0.6s both;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.insight-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(139, 92, 246, 0.3);
+    border-color: var(--accent-purple);
+}
+
+.insight-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.insight-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+
+.insight-card p {
+    font-size: 0.975rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    animation: fadeIn 1s ease-out 0.7s both;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .title {
+        font-size: 2rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .metric-group {
+        grid-template-columns: 1fr;
+    }
+
+    .indices-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .comparison-table {
+        font-size: 0.875rem;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 0.75rem;
+    }
+}
+
+/* ==========================================
+   TAB NAVIGATION
+   ========================================== */
+
+.tab-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    background: var(--card-bg);
+    padding: 0.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 1rem 2rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.tab-button:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+}
+
+.tab-button.active {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   PORTFOLIO KPI CARDS
+   ========================================== */
+
+.kpi-section {
+    margin-bottom: 3rem;
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.kpi-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.kpi-card.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #8b5cf6;
+}
+
+.kpi-card.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border-color: #10b981;
+}
+
+.kpi-card.highlight {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-color: #ef4444;
+}
+
+.kpi-label {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+}
+
+/* ==========================================
+   PORTFOLIO CHARTS
+   ========================================== */
+
+.charts-section {
+    margin-bottom: 3rem;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    /* Single column for vertical stacking */
+    gap: 3rem;
+    /* More spacing between charts */
+}
+
+.chart-container {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2rem;
+    border: 2px solid var(--border-color);
+}
+
+.chart-container.full-width {
+    grid-column: 1 / -1;
+}
+
+.chart-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.chart-plot {
+    min-height: 500px;
+    /* Larger charts */
+    height: 500px;
+    width: 100%;
+    /* Force full width */
+}
+
+/* ==========================================
+   CALENDAR RETURNS
+   ========================================== */
+
+.calendar-section {
+    margin-bottom: 3rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.calendar-year {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.calendar-year:hover {
+    transform: scale(1.05);
+}
+
+.calendar-year.positive {
+    border-color: var(--accent-green);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+}
+
+.calendar-year.negative {
+    border-color: var(--accent-red);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+}
+
+.calendar-year-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.calendar-year-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.calendar-year.positive .calendar-year-value {
+    color: var(--accent-green);
+}
+
+.calendar-year.negative .calendar-year-value {
+    color: var(--accent-red);
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 768px) {
+    .tab-nav {
+        flex-direction: column;
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-value {
+        font-size: 1.5rem;
+    }
+}
+
+/* ==========================================
+   ALLOCATION TABLE STYLES
+   ========================================== */
+
+.allocation-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+}
+
+.allocation-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-family: 'Inter', monospace;
+}
+
+.allocation-table thead {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    z-index: 10;
+}
+
+.allocation-table th {
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+.allocation-table th.year-col {
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+.allocation-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s ease;
+}
+
+.allocation-table tbody tr:hover {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.allocation-table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    text-align: center;
+    border: 1px solid var(--border-color);
+    line-height: 1.3;
+}
+
+.allocation-table td div {
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.allocation-table td.year-col {
+    position: sticky;
+    left: 0;
+    font-weight: 700;
+    color: var(--accent-purple);
+    background: var(--card-bg);
+    z-index: 5;
+    font-size: 1rem;
+}
+
+.allocation-table tbody tr:hover td.year-col {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+/* Highlight allocation changes in yellow */
+.allocation-table td.allocation-change {
+    color: #fbbf24 !important;
+    font-weight: 700;
+    background: rgba(251, 191, 36, 0.1);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.allocation-table td.no-data {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Responsive adjustments for allocation table */
+@media (max-width: 768px) {
+    .allocation-table {
+        font-size: 0.7rem;
+    }
+
+    .allocation-table td,
+    .allocation-table th {
+        padding: 0.5rem 0.25rem;
+    }
+
+    .allocation-table-wrapper {
+        max-height: 400px;
+    }
+}

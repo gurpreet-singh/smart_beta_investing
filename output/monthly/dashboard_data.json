@@ -1,0 +1,38 @@
+{
+  "indices": [
+    {
+      "name": "NIFTY200 MOMENTUM 30",
+      "sip_xirr": 16.96,
+      "index_cagr": 18.55,
+      "total_return": 659.52,
+      "total_invested": 2490000.0,
+      "final_value": 18911963.18,
+      "absolute_gain": 16421963.18,
+      "max_drawdown": -62.86,
+      "max_investor_drawdown": -65.29,
+      "start_nav": 924.62,
+      "end_nav": 31147.55,
+      "num_sips": 249
+    },
+    {
+      "name": "NIFTY200 VALUE 30",
+      "sip_xirr": 13.95,
+      "index_cagr": 14.41,
+      "total_return": 415.66,
+      "total_invested": 2490000.0,
+      "final_value": 12839979.45,
+      "absolute_gain": 10349979.45,
+      "max_drawdown": -58.02,
+      "max_investor_drawdown": -62.84,
+      "start_nav": 909.96,
+      "end_nav": 14708.9,
+      "num_sips": 249
+    }
+  ],
+  "portfolio": {
+    "total_invested": 4980000.0,
+    "total_value": 31751942.63,
+    "total_gain": 26771942.63,
+    "overall_return": 537.59
+  }
+}

@@ -1,0 +1,442 @@
+// Smart Beta Portfolio Dashboard
+// Handles both Individual Indices and Portfolio Strategy tabs
+
+// ==========================================
+// TAB SWITCHING
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Tab switching logic
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.dataset.tab;
+
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            document.getElementById(`${targetTab}-tab`).classList.add('active');
+
+            // Resize Plotly charts when switching to portfolio tab
+            if (targetTab === 'portfolio') {
+                setTimeout(() => {
+                    const chartIds = ['chart-nav', 'chart-sip-value', 'chart-drawdown',
+                        'chart-rolling', 'chart-attribution', 'chart-alpha'];
+                    chartIds.forEach(id => {
+                        const elem = document.getElementById(id);
+                        if (elem && elem.layout) {
+                            Plotly.Plots.resize(elem);
+                        }
+                    });
+                }, 100);
+            }
+        });
+    });
+
+    // Load both tabs' data
+    loadIndicesData();
+    loadPortfolioData();
+});
+
+// ==========================================
+// INDIVIDUAL INDICES TAB
+// ==========================================
+
+async function loadIndicesData() {
+    try {
+        const response = await fetch('../output/monthly/dashboard_data.json');
+        const data = await response.json();
+
+        // Update total portfolio summary
+        const totalInvested = data.indices.reduce((sum, idx) => sum + idx.total_invested, 0);
+        const totalValue = data.indices.reduce((sum, idx) => sum + idx.final_value, 0);
+
+        document.getElementById('total-invested').textContent = `₹${formatNumber(totalInvested)}`;
+        document.getElementById('total-value').textContent = `₹${formatNumber(totalValue)}`;
+
+        // Render individual index cards
+        renderIndices(data.indices);
+
+        // Load and render ratio chart
+        loadRatioChart();
+
+        // Update insights
+        updateInsights(data.indices);
+
+    } catch (error) {
+        console.error('Error loading indices data:', error);
+    }
+}
+
+function renderIndices(indices) {
+    const container = document.getElementById('indices-container');
+    container.innerHTML = '';
+
+    indices.forEach(index => {
+        const card = createIndexCard(index);
+        container.appendChild(card);
+    });
+}
+
+function createIndexCard(index) {
+    const card = document.createElement('div');
+    card.className = 'index-card';
+
+    const gainClass = index.absolute_gain >= 0 ? 'positive' : 'negative';
+
+    card.innerHTML = `
+        <div class="index-header">
+            <h3 class="index-name">${index.name}</h3>
+        </div>
+        <div class="index-metrics">
+            <div class="metric-row">
+                <span class="metric-label">SIP XIRR</span>
+                <span class="metric-value highlight">${index.sip_xirr.toFixed(2)}%</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Index CAGR</span>
+                <span class="metric-value">${index.index_cagr.toFixed(2)}%</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total Return</span>
+                <span class="metric-value">${index.total_return.toFixed(2)}%</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Invested</span>
+                <span class="metric-value">₹${formatNumber(index.total_invested)}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Current Value</span>
+                <span class="metric-value">₹${formatNumber(index.final_value)}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Absolute Gain</span>
+                <span class="metric-value ${gainClass}">₹${formatNumber(index.absolute_gain)}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Max Drawdown</span>
+                <span class="metric-value">${index.max_drawdown.toFixed(2)}%</span>
+            </div>
+            <div class="metric-row warning">
+                <span class="metric-label">⭐ Max Investor DD</span>
+                <span class="metric-value">${index.max_investor_drawdown.toFixed(2)}%</span>
+            </div>
+        </div>
+    `;
+
+    return card;
+}
+
+async function loadRatioChart() {
+    try {
+        const response = await fetch('../output/weekly/ratio_chart.json');
+        const chartData = await response.json();
+
+        const chartDiv = document.getElementById('ratio-chart');
+        Plotly.newPlot(chartDiv, chartData.data, chartData.layout, { responsive: true });
+    } catch (error) {
+        console.error('Error loading ratio chart:', error);
+        document.getElementById('ratio-chart').innerHTML = '<p style="color: #ef4444; padding: 2rem;">Error loading chart</p>';
+    }
+}
+
+function updateInsights(indices) {
+    // Find best performer by XIRR
+    const bestPerformer = indices.reduce((best, current) =>
+        current.sip_xirr > best.sip_xirr ? current : best
+    );
+
+    // Find lowest drawdown
+    const lowestDD = indices.reduce((best, current) =>
+        current.max_investor_drawdown > best.max_investor_drawdown ? current : best
+    );
+
+    document.getElementById('best-performer').textContent =
+        `${bestPerformer.name} with ${bestPerformer.sip_xirr.toFixed(2)}% XIRR`;
+
+    document.getElementById('lowest-dd').textContent =
+        `${lowestDD.name} with ${lowestDD.max_investor_drawdown.toFixed(2)}% max investor drawdown`;
+}
+
+// ==========================================
+// PORTFOLIO STRATEGY TAB
+// ==========================================
+
+async function loadPortfolioData() {
+    try {
+        const response = await fetch('../output/portfolio_dashboard.json');
+        const data = await response.json();
+
+        // Update KPI cards
+        updateKPIs(data.kpis);
+
+        // Render charts
+        renderPortfolioCharts(data.charts);
+
+        // Render calendar returns
+        renderCalendarReturns(data.calendar_returns);
+
+    } catch (error) {
+        console.error('Error loading portfolio data:', error);
+        document.querySelectorAll('.kpi-value').forEach(el => {
+            el.textContent = 'Error';
+        });
+    }
+}
+
+function updateKPIs(kpis) {
+    document.getElementById('kpi-xirr').textContent = `${kpis.sip_xirr}%`;
+    document.getElementById('kpi-cagr').textContent = `${kpis.cagr}%`;
+    document.getElementById('kpi-investor-dd').textContent = `${kpis.max_investor_dd}%`;
+    document.getElementById('kpi-max-dd').textContent = `${kpis.max_drawdown}%`;
+    document.getElementById('kpi-mar').textContent = kpis.mar_ratio.toFixed(2);
+    document.getElementById('kpi-vol').textContent = `${kpis.volatility.toFixed(1)}%`;
+    document.getElementById('kpi-total-return').textContent = `${kpis.total_return_pct}%`;
+    document.getElementById('kpi-time-momentum').textContent = `${kpis.pct_time_momentum}%`;
+}
+
+function renderPortfolioCharts(charts) {
+    // Chart 1: Portfolio NAV
+    const navTrace = {
+        x: charts.nav_series.dates,
+        y: charts.nav_series.nav,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Portfolio NAV',
+        line: { color: '#8b5cf6', width: 2 }
+    };
+
+    const navLayout = {
+        autosize: true,
+        paper_bgcolor: '#1e293b',
+        plot_bgcolor: '#1e293b',
+        font: { color: '#f1f5f9', family: 'Inter' },
+        yaxis: { type: 'log', gridcolor: '#334155' },
+        xaxis: { gridcolor: '#334155' },
+        margin: { l: 60, r: 40, t: 40, b: 60 }
+    };
+
+    const config = { responsive: true, displayModeBar: true };
+
+    Plotly.newPlot('chart-nav', [navTrace], navLayout, config);
+
+    // Chart 2: SIP Portfolio Value
+    const sipInvestedTrace = {
+        x: charts.sip_value_series.dates,
+        y: charts.sip_value_series.invested,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Total Invested',
+        line: { color: '#94a3b8', width: 2, dash: 'dash' }
+    };
+
+    const sipValueTrace = {
+        x: charts.sip_value_series.dates,
+        y: charts.sip_value_series.value,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Portfolio Value',
+        fill: 'tonexty',
+        line: { color: '#10b981', width: 2 }
+    };
+
+    Plotly.newPlot('chart-sip-value', [sipInvestedTrace, sipValueTrace], navLayout, config);
+
+    // Chart 3: Drawdowns
+    const navDDTrace = {
+        x: charts.drawdown_series.dates,
+        y: charts.drawdown_series.nav_dd,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'NAV Drawdown',
+        line: { color: '#ef4444', width: 2 }
+    };
+
+    const investorDDTrace = {
+        x: charts.drawdown_series.dates,
+        y: charts.drawdown_series.investor_dd,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Investor Drawdown',
+        line: { color: '#f59e0b', width: 2 }
+    };
+
+    Plotly.newPlot('chart-drawdown', [navDDTrace, investorDDTrace], navLayout, config);
+
+    // Chart 4: Allocation Table (replacing chart)
+    renderAllocationTable(charts.allocation_series);
+
+
+    // Chart 5: Rolling Returns
+    const rolling3yTrace = {
+        x: charts.rolling_returns.dates,
+        y: charts.rolling_returns.rolling_3y,
+        type: 'scatter',
+        mode: 'lines',
+        name: '3Y Rolling CAGR',
+        line: { color: '#3b82f6', width: 2 }
+    };
+
+    const rolling5yTrace = {
+        x: charts.rolling_returns.dates,
+        y: charts.rolling_returns.rolling_5y,
+        type: 'scatter',
+        mode: 'lines',
+        name: '5Y Rolling CAGR',
+        line: { color: '#f59e0b', width: 2 }
+    };
+
+    Plotly.newPlot('chart-rolling', [rolling3yTrace, rolling5yTrace], navLayout, config);
+
+    // Chart 6: Attribution
+    const momContribTrace = {
+        x: charts.attribution.dates,
+        y: charts.attribution.mom_contrib,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Momentum Contribution',
+        line: { color: '#8b5cf6', width: 2 }
+    };
+
+    const valContribTrace = {
+        x: charts.attribution.dates,
+        y: charts.attribution.val_contrib,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Value Contribution',
+        line: { color: '#10b981', width: 2 }
+    };
+
+    Plotly.newPlot('chart-attribution', [momContribTrace, valContribTrace], navLayout, config);
+
+    // Chart 7: Alpha vs Static
+    const strategyNAVTrace = {
+        x: charts.alpha.dates,
+        y: charts.alpha.strategy_nav,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Strategy NAV (75/25)',
+        line: { color: '#8b5cf6', width: 3 }
+    };
+
+    const staticNAVTrace = {
+        x: charts.alpha.dates,
+        y: charts.alpha.static_nav,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Static 50/50',
+        line: { color: '#94a3b8', width: 2, dash: 'dash' }
+    };
+
+    Plotly.newPlot('chart-alpha', [staticNAVTrace, strategyNAVTrace], navLayout, config);
+}
+
+function renderCalendarReturns(calendarReturns) {
+    const container = document.getElementById('calendar-returns');
+    container.innerHTML = '';
+
+    calendarReturns.forEach(yearData => {
+        const yearCard = document.createElement('div');
+        const returnClass = yearData.Return >= 0 ? 'positive' : 'negative';
+        yearCard.className = `calendar-year ${returnClass}`;
+
+        yearCard.innerHTML = `
+            <div class="calendar-year-label">${yearData.Year}</div>
+            <div class="calendar-year-value">${yearData.Return >= 0 ? '+' : ''}${yearData.Return.toFixed(1)}%</div>
+        `;
+
+        container.appendChild(yearCard);
+    });
+}
+
+// ==========================================
+// ALLOCATION TABLE RENDERER
+// ==========================================
+
+function renderAllocationTable(allocationSeries) {
+    const container = document.getElementById('allocation-table-container');
+
+    // Organize data by year and month
+    const dataByYear = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    allocationSeries.dates.forEach((dateStr, index) => {
+        const date = new Date(dateStr);
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-11
+
+        if (!dataByYear[year]) {
+            dataByYear[year] = {};
+        }
+
+        const momValue = allocationSeries.momentum[index];
+        const valValue = allocationSeries.value[index];
+
+        dataByYear[year][month] = {
+            momentum: momValue,
+            value: valValue
+        };
+    });
+
+    // Create table HTML
+    let tableHTML = '<table class="allocation-table">';
+
+    // Header row
+    tableHTML += '<thead><tr><th class="year-col">Year</th>';
+    months.forEach(month => {
+        tableHTML += `<th>${month}</th>`;
+    });
+    tableHTML += '</tr></thead>';
+
+    // Body rows
+    tableHTML += '<tbody>';
+    const years = Object.keys(dataByYear).sort();
+
+    years.forEach(year => {
+        tableHTML += `<tr><td class="year-col">${year}</td>`;
+
+        let prevAllocation = null;
+
+        months.forEach((month, monthIndex) => {
+            const data = dataByYear[year][monthIndex];
+
+            if (data) {
+                const currentAllocation = `${data.momentum}-${data.value}`;
+                const isChange = prevAllocation !== null && prevAllocation !== currentAllocation;
+                const cellClass = isChange ? 'allocation-change' : '';
+
+                tableHTML += `<td class="${cellClass}"><div>mom-${data.momentum}</div><div>val-${data.value}</div></td>`;
+                prevAllocation = currentAllocation;
+            } else {
+                tableHTML += '<td class="no-data">-</td>';
+            }
+        });
+
+        tableHTML += '</tr>';
+    });
+
+    tableHTML += '</tbody></table>';
+
+    container.innerHTML = tableHTML;
+}
+
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
+function formatNumber(num) {
+    if (num >= 10000000) {
+        return `${(num / 10000000).toFixed(2)}Cr`;
+    } else if (num >= 100000) {
+        return `${(num / 100000).toFixed(2)}L`;
+    } else if (num >= 1000) {
+        return `${(num / 1000).toFixed(0)}K`;
+    } else {
+        return num.toFixed(0);
+    }
+}
