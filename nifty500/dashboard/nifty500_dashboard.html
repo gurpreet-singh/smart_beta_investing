@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Beta Portfolio Dashboard | 2005-2025</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">Smart Beta Portfolio Dashboard</h1>
+                <p class="subtitle">April 2005 - December 2025 | Dual-Factor Rotation Strategy</p>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+            <button class="tab-button active" data-tab="indices">📊 Individual Indices</button>
+            <button class="tab-button" data-tab="portfolio">🎯 Portfolio Strategy</button>
+        </nav>
+
+        <!-- Tab Content: Individual Indices -->
+        <div id="indices-tab" class="tab-content active">
+            <!-- Portfolio Summary -->
+            <section class="portfolio-summary">
+                <div class="summary-card total">
+                    <div class="card-header">
+                        <h3>Total Portfolio</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-value" id="total-invested">Loading...</div>
+                        <div class="metric-label">Total Invested</div>
+                        <div class="metric-value highlight" id="total-value">Loading...</div>
+                        <div class="metric-label">Current Value</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Individual Indices -->
+            <section class="indices-section">
+                <h2 class="section-title">Individual Index Performance</h2>
+                <div class="indices-grid" id="indices-container">
+                    <!-- Dynamically populated -->
+                </div>
+            </section>
+
+            <!-- Momentum 30 Index Chart -->
+            <section class="chart-section">
+                <h2 class="section-title">Momentum 30 Index (Weekly with 30-Week MA)</h2>
+                <div class="chart-card">
+                    <div id="momentum-chart" class="index-chart-container"></div>
+                </div>
+            </section>
+
+            <!-- Value 30 Index Chart -->
+            <section class="chart-section">
+                <h2 class="section-title">Value 30 Index (Weekly with 30-Week MA)</h2>
+                <div class="chart-card">
+                    <div id="value-chart" class="index-chart-container"></div>
+                </div>
+            </section>
+
+            <!-- Momentum/Value Ratio Chart -->
+            <section class="chart-section">
+                <h2 class="section-title">Momentum/Value Ratio Analysis</h2>
+                <div class="chart-card">
+                    <div id="ratio-chart" class="ratio-chart-container"></div>
+                </div>
+            </section>
+
+            <!-- Key Insights -->
+            <section class="insights-section">
+                <h2 class="section-title">Key Insights</h2>
+                <div class="insights-grid">
+                    <div class="insight-card">
+                        <h3>🎯 Best Performer</h3>
+                        <p id="best-performer">Loading...</p>
+                    </div>
+                    <div class="insight-card">
+                        <h3>⚡ Lowest Drawdown</h3>
+                        <p id="lowest-dd">Loading...</p>
+                    </div>
+                    <div class="insight-card">
+                        <h3>📈 Strategy</h3>
+                        <p>Monthly SIP of ₹10,000 per index demonstrates the power of rupee-cost averaging in Nifty 200
+                            Smart Beta indices</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab Content: Portfolio Strategy -->
+        <div id="portfolio-tab" class="tab-content">
+            <!-- KPI Cards -->
+            <section class="kpi-section">
+                <h2 class="section-title">Portfolio Performance</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-card primary">
+                        <div class="kpi-label">SIP XIRR</div>
+                        <div class="kpi-value" id="kpi-xirr">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Strategy CAGR</div>
+                        <div class="kpi-value" id="kpi-cagr">--</div>
+                    </div>
+                    <div class="kpi-card success">
+                        <div class="kpi-label">Investor Drawdown</div>
+                        <div class="kpi-value" id="kpi-investor-dd">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Max Drawdown</div>
+                        <div class="kpi-value" id="kpi-max-dd">--</div>
+                    </div>
+                    <div class="kpi-card highlight">
+                        <div class="kpi-label">MAR Ratio</div>
+                        <div class="kpi-value" id="kpi-mar">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Volatility</div>
+                        <div class="kpi-value" id="kpi-vol">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Total Return</div>
+                        <div class="kpi-value" id="kpi-total-return">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">% Time Momentum</div>
+                        <div class="kpi-value" id="kpi-time-momentum">--</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Charts Row 1 -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Portfolio NAV Growth</h3>
+                        <div id="chart-nav" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">SIP Portfolio Value</h3>
+                        <div id="chart-sip-value" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Drawdown Chart (Full Width) -->
+            <section class="charts-section">
+                <div class="chart-container full-width">
+                    <h3 class="chart-title">Underwater Drawdown Chart</h3>
+                    <div id="chart-drawdown" class="chart-plot"></div>
+                </div>
+            </section>
+
+            <!-- Allocation & Rolling Returns -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Dynamic Allocation (Momentum/Value)</h3>
+                        <div id="allocation-table-container" class="allocation-table-wrapper"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Rolling Returns (3Y & 5Y)</h3>
+                        <div id="chart-rolling" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Attribution & Alpha -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Factor Attribution</h3>
+                        <div id="chart-attribution" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Alpha vs Static 50/50</h3>
+                        <div id="chart-alpha" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calendar Returns -->
+            <section class="calendar-section">
+                <h2 class="section-title">Calendar Year Returns</h2>
+                <div id="calendar-returns" class="calendar-grid"><!-- Populated by JS --></div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Data: NSE India | Analysis Period: April 2005 - December 2025 | Monthly SIP: ₹10,000</p>
+            <p>Past performance is not indicative of future results. This is for educational purposes only.</p>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

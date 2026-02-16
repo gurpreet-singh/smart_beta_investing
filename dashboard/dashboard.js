@@ -62,7 +62,8 @@ async function loadIndicesData() {
         // Render individual index cards
         renderIndices(data.indices);
 
-        // Load and render ratio chart
+        // Load and render charts
+        loadIndividualIndexCharts();  // New: Load Momentum and Value charts with MAs
         loadRatioChart();
 
         // Update insights
@@ -143,6 +144,112 @@ async function loadRatioChart() {
         console.error('Error loading ratio chart:', error);
         document.getElementById('ratio-chart').innerHTML = '<p style="color: #ef4444; padding: 2rem;">Error loading chart</p>';
     }
+}
+
+async function loadIndividualIndexCharts() {
+    try {
+        const response = await fetch('../output/dashboard_data.json');
+        const data = await response.json();
+
+        if (!data.weekly_charts) {
+            console.error('Weekly chart data not available');
+            return;
+        }
+
+        const weeklyData = data.weekly_charts;
+
+        // Render Momentum 30 Chart
+        renderIndexChart(
+            'momentum-chart',
+            weeklyData.momentum.dates,
+            weeklyData.momentum.close,
+            weeklyData.momentum.ma_30,
+            'Momentum 30 Index',
+            '#8b5cf6'  // Purple
+        );
+
+        // Render Value 30 Chart
+        renderIndexChart(
+            'value-chart',
+            weeklyData.value.dates,
+            weeklyData.value.close,
+            weeklyData.value.ma_30,
+            'Value 30 Index',
+            '#10b981'  // Green
+        );
+
+    } catch (error) {
+        console.error('Error loading individual index charts:', error);
+    }
+}
+
+function renderIndexChart(containerId, dates, closeValues, maValues, indexName, color) {
+    const indexTrace = {
+        x: dates,
+        y: closeValues,
+        type: 'scatter',
+        mode: 'lines',
+        name: indexName,
+        line: { color: color, width: 2 },
+        hovertemplate: '<b>Date:</b> %{x}<br>' +
+            '<b>Close:</b> %{y:.2f}<br>' +
+            '<extra></extra>'
+    };
+
+    const maTrace = {
+        x: dates,
+        y: maValues,
+        type: 'scatter',
+        mode: 'lines',
+        name: '30-Week MA',
+        line: { color: '#f59e0b', width: 3, dash: 'solid' },
+        hovertemplate: '<b>Date:</b> %{x}<br>' +
+            '<b>30W MA:</b> %{y:.2f}<br>' +
+            '<extra></extra>'
+    };
+
+    const layout = {
+        xaxis: {
+            title: 'Date',
+            showgrid: true,
+            gridcolor: '#1e293b',
+            color: '#94a3b8',
+            zeroline: false
+        },
+        yaxis: {
+            title: 'Index Value',
+            showgrid: true,
+            gridcolor: '#1e293b',
+            color: '#94a3b8',
+            zeroline: false,
+            tickformat: ',.0f'
+        },
+        plot_bgcolor: '#0f172a',
+        paper_bgcolor: '#0f172a',
+        font: { family: 'Inter, sans-serif', color: '#f1f5f9' },
+        hovermode: 'x unified',
+        hoverlabel: {
+            bgcolor: '#334155',
+            font_size: 14,
+            font_family: 'Inter'
+        },
+        height: 400,
+        margin: { l: 60, r: 40, t: 20, b: 60 },
+        showlegend: true,
+        legend: {
+            orientation: 'h',
+            x: 0.5,
+            xanchor: 'center',
+            y: 1.05,
+            bgcolor: 'rgba(15, 23, 42, 0.8)',
+            bordercolor: '#334155',
+            borderwidth: 1
+        }
+    };
+
+    const config = { responsive: true, displayModeBar: true };
+
+    Plotly.newPlot(containerId, [indexTrace, maTrace], layout, config);
 }
 
 function updateInsights(indices) {
@@ -247,26 +354,58 @@ function renderPortfolioCharts(charts) {
 
     Plotly.newPlot('chart-sip-value', [sipInvestedTrace, sipValueTrace], navLayout, config);
 
-    // Chart 3: Drawdowns
-    const navDDTrace = {
+    // Chart 3: Underwater Drawdown Chart (Strategy + Individual Indices)
+    const strategyDDTrace = {
         x: charts.drawdown_series.dates,
-        y: charts.drawdown_series.nav_dd,
+        y: charts.drawdown_series.strategy_dd,
         type: 'scatter',
         mode: 'lines',
-        name: 'NAV Drawdown',
-        line: { color: '#ef4444', width: 2 }
+        name: 'Strategy (Ratio Trend 75/25)',
+        line: { color: '#8b5cf6', width: 3 },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(139, 92, 246, 0.1)'
     };
 
-    const investorDDTrace = {
+    const momentumDDTrace = {
         x: charts.drawdown_series.dates,
-        y: charts.drawdown_series.investor_dd,
+        y: charts.drawdown_series.momentum_dd,
         type: 'scatter',
         mode: 'lines',
-        name: 'Investor Drawdown',
-        line: { color: '#f59e0b', width: 2 }
+        name: 'Momentum 30 Index',
+        line: { color: '#3b82f6', width: 2, dash: 'dot' }
     };
 
-    Plotly.newPlot('chart-drawdown', [navDDTrace, investorDDTrace], navLayout, config);
+    const valueDDTrace = {
+        x: charts.drawdown_series.dates,
+        y: charts.drawdown_series.value_dd,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Value 30 Index',
+        line: { color: '#10b981', width: 2, dash: 'dot' }
+    };
+
+    const underwaterLayout = {
+        ...navLayout,
+        yaxis: {
+            title: 'Drawdown (%)',
+            gridcolor: '#1e293b',
+            zerolinecolor: '#475569',
+            tickformat: '.1f'
+        },
+        hovermode: 'x unified',
+        showlegend: true,
+        legend: {
+            orientation: 'h',
+            x: 0.5,
+            xanchor: 'center',
+            y: 1.15,
+            bgcolor: 'rgba(15, 23, 42, 0.8)',
+            bordercolor: '#334155',
+            borderwidth: 1
+        }
+    };
+
+    Plotly.newPlot('chart-drawdown', [strategyDDTrace, momentumDDTrace, valueDDTrace], underwaterLayout, config);
 
     // Chart 4: Allocation Table (replacing chart)
     renderAllocationTable(charts.allocation_series);

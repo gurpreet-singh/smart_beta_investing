@@ -45,6 +45,13 @@ class PortfolioAnalytics:
         df['Running_Max_NAV'] = df['Portfolio_NAV'].cummax()
         df['NAV_Drawdown_Pct'] = ((df['Portfolio_NAV'] - df['Running_Max_NAV']) / df['Running_Max_NAV']) * 100
         
+        # Individual Index Drawdowns (for underwater chart comparison)
+        df['Running_Max_Mom'] = df['Close_mom'].cummax()
+        df['Mom_Drawdown_Pct'] = ((df['Close_mom'] - df['Running_Max_Mom']) / df['Running_Max_Mom']) * 100
+        
+        df['Running_Max_Val'] = df['Close_val'].cummax()
+        df['Val_Drawdown_Pct'] = ((df['Close_val'] - df['Running_Max_Val']) / df['Running_Max_Val']) * 100
+        
         # Underwater periods (boolean)
         df['Underwater'] = df['Portfolio_NAV'] < df['Running_Max_NAV']
         
@@ -219,11 +226,12 @@ class PortfolioAnalytics:
             'value': df['Portfolio_Value'].tolist()
         }
         
-        # Chart 3: Drawdowns
+        # Chart 3: Underwater Drawdowns (Strategy + Individual Indices)
         charts['drawdown_series'] = {
             'dates': df['Date'].dt.strftime('%Y-%m-%d').tolist(),
-            'nav_dd': df['NAV_Drawdown_Pct'].tolist(),
-            'investor_dd': df['Investor_Drawdown_Pct'].tolist()
+            'strategy_dd': df['NAV_Drawdown_Pct'].tolist(),
+            'momentum_dd': df['Mom_Drawdown_Pct'].tolist(),
+            'value_dd': df['Val_Drawdown_Pct'].tolist()
         }
         
         # Chart 4: Allocation Stack
