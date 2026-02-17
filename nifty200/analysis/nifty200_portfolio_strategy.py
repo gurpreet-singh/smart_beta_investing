@@ -1,16 +1,13 @@
 """
-Dual-Factor Rotation Strategy - CONDITIONAL NEUTRAL + HYSTERESIS (v2)
-Dynamic allocation between Momentum 30 and Value 30 based on ratio trend
-Always invested, no cash - optimal risk-adjusted returns
+Quarterly Alpha Rotation Strategy (100/0)
+Dynamic allocation between Momentum 30 and Value 30 based on quarterly relative momentum
 
-Strategy: 3-State Conditional Neutral with Hysteresis (0.30% / 0.10%)
-- Compares Momentum/Value ratio to its 6-month moving average
-- Uses ratio_diff = (Ratio - MA) / MA as normalized signal
-- Strong cross (|ratio_diff| > enter_band): immediate 75/25 switch
-- Weak zone (between exit and enter bands): conditional 50/50 neutral
-- Hysteresis: enter_band=0.30%, exit_band=0.10% prevents flip-flop
-- No cooldown delay, no confirmation lag — preserves early regime capture
-- Neutral is conditional (rare ~3% of time), not structural
+Strategy: Institutional-style factor rotation
+- 6M relative momentum signal (raw, no MA smoothing)
+- Decisions only at quarter boundaries (calendar is the smoother)
+- 100/0 hard allocation (momentum or value, no neutral)
+- 1-month execution delay (no lookahead bias)
+- No hysteresis, no cooldown — quarterly frequency does the filtering
 """
 
 import pandas as pd
@@ -65,7 +62,7 @@ class PortfolioStrategy:
     def load_monthly_data(self):
         """Load pre-generated monthly data for both indices"""
         print("\n" + "="*80)
-        print("DUAL-FACTOR ROTATION STRATEGY - RATIO TREND")
+        print("QUARTERLY ALPHA ROTATION STRATEGY (100/0)")
         print("="*80)
         print("\n📂 Loading monthly index data...")
         
@@ -96,103 +93,8 @@ class PortfolioStrategy:
         df['Return_mom'] = df['Close_mom'].pct_change()
         df['Return_val'] = df['Close_val'].pct_change()
         
-        # Calculate ratio for signals
+        # Calculate ratio for reference
         df['Ratio'] = df['Close_mom'] / df['Close_val']
-        
-        return df
-    
-    def signal_ratio_trend(self, df, ma_length=6):
-        """Ratio Trend Signal with normalized ratio_diff
-        
-        Computes (Ratio - MA) / MA as normalized signal for hysteresis bands.
-        """
-        df['Ratio_MA'] = df['Ratio'].rolling(ma_length).mean()
-        df['Signal_Ratio'] = df['Ratio'] - df['Ratio_MA']
-        df['Ratio_Diff'] = (df['Ratio'] - df['Ratio_MA']) / df['Ratio_MA']
-        
-        return df
-    
-    def apply_allocation(self, df, enter_band=0.003, exit_band=0.001):
-        """Apply 3-state conditional neutral allocation with hysteresis.
-        
-        State machine with hysteresis bands:
-        - Enter Momentum: ratio_diff > +enter_band (0.30%)
-        - Stay Momentum:  ratio_diff > -exit_band (only exit below -0.10%)
-        - Enter Value:    ratio_diff < -enter_band (-0.30%)
-        - Stay Value:     ratio_diff < +exit_band (only exit above +0.10%)
-        - Neutral (50/50): conditional, only in weak zone between bands
-        
-        Key properties:
-        - Strong crosses go directly 75/25 (no delay)
-        - Hysteresis prevents flip-flop without time penalty
-        - No cooldown, no confirmation lag
-        - Neutral is rare (~3% of time), not structural
-        """
-        n = len(df)
-        ratio_diff = df['Ratio_Diff'].values
-        
-        w_mom = np.zeros(n)
-        w_val = np.zeros(n)
-        
-        # State: 'momentum', 'value', 'neutral'
-        current_state = 'neutral'
-        
-        for i in range(n):
-            rd = ratio_diff[i]
-            
-            if np.isnan(rd):
-                # Before MA warmup → 50/50
-                w_mom[i] = 0.50
-                current_state = 'neutral'
-                w_val[i] = 0.50
-                continue
-            
-            if current_state == 'momentum':
-                # Stay in momentum unless ratio_diff drops below -exit_band
-                if rd < -exit_band:
-                    if rd < -enter_band:
-                        # Strong reversal → direct to Value
-                        current_state = 'value'
-                        w_mom[i] = 0.25
-                    else:
-                        # Weak exit → conditional neutral
-                        current_state = 'neutral'
-                        w_mom[i] = 0.50
-                else:
-                    # Still comfortably in Momentum
-                    w_mom[i] = 0.75
-                    
-            elif current_state == 'value':
-                # Stay in value unless ratio_diff rises above +exit_band
-                if rd > exit_band:
-                    if rd > enter_band:
-                        # Strong reversal → direct to Momentum
-                        current_state = 'momentum'
-                        w_mom[i] = 0.75
-                    else:
-                        # Weak exit → conditional neutral
-                        current_state = 'neutral'
-                        w_mom[i] = 0.50
-                else:
-                    # Still in Value
-                    w_mom[i] = 0.25
-                    
-            elif current_state == 'neutral':
-                # Only leave neutral on a strong signal (enter_band)
-                if rd > enter_band:
-                    current_state = 'momentum'
-                    w_mom[i] = 0.75
-                elif rd < -enter_band:
-                    current_state = 'value'
-                    w_mom[i] = 0.25
-                else:
-                    # Stay neutral — weak zone
-                    w_mom[i] = 0.50
-            
-            w_val[i] = 1 - w_mom[i]
-        
-        df['w_mom'] = w_mom
-        df['w_val'] = w_val
         
         return df
 
@@ -283,28 +185,78 @@ class PortfolioStrategy:
         return results, sip_data
     
     def run_strategy(self):
-        """Run the Ratio Trend 75/25 strategy"""
+        """Run Quarterly Alpha Rotation strategy
+        
+        Institutional-style factor rotation:
+        - 6M relative momentum signal (no MA, no hysteresis)
+        - Decisions only at quarter boundaries
+        - 100/0 hard allocation (momentum or value)
+        - 1-month execution delay (no lookahead)
+        - Calendar acts as the smoother
+        """
         print("\n" + "="*80)
-        print("BACKTESTING: RATIO TREND 75/25 STRATEGY")
+        print("BACKTESTING: QUARTERLY ALPHA ROTATION (100/0)")
         print("="*80)
         
         # Load data
         df = self.load_monthly_data()
         df = self.calculate_returns(df)
         
-        # Calculate signal
-        df = self.signal_ratio_trend(df, ma_length=6)
+        # STEP 1 — Quarterly decision grid
+        df['Quarter'] = df['Date'].dt.to_period('Q')
         
-        # Apply allocation
-        df = self.apply_allocation(df)
+        # STEP 2 — 6M relative momentum signal (raw, no MA smoothing)
+        df['RelMom_6M'] = (
+            df['Close_mom'].pct_change(6) -
+            df['Close_val'].pct_change(6)
+        )
+        
+        # STEP 3 — Sample ONLY quarter ends
+        quarterly = df.groupby('Quarter').last()
+        
+        # STEP 4 — 100/0 regime selection (no neutral, hard switch)
+        quarterly['regime'] = np.where(
+            quarterly['RelMom_6M'] > 0,
+            'momentum',
+            'value'
+        )
+        
+        # STEP 5 — Forward fill regime to monthly rows
+        df = df.merge(
+            quarterly[['regime']],
+            left_on='Quarter',
+            right_index=True,
+            how='left'
+        )
+        df['regime'] = df['regime'].ffill()
+        
+        # STEP 6 — Execute next month (no lookahead)
+        df['regime'] = df['regime'].shift(1).fillna('value')
+        
+        # STEP 7 — Set weights based on regime
+        df['w_mom'] = np.where(df['regime'] == 'momentum', 1.0, 0.0)
+        df['w_val'] = 1.0 - df['w_mom']
+        
+        # STEP 8 — Portfolio returns
         df = self.calculate_portfolio_returns(df)
+        
+        # Print regime summary
+        regime_counts = df['regime'].value_counts()
+        total = len(df)
+        print(f"\n📊 Regime Distribution:")
+        for regime, count in regime_counts.items():
+            print(f"   {regime:>10s}: {count:3d} months ({count/total*100:.1f}%)")
+        
+        # Count regime switches
+        switches = (df['regime'] != df['regime'].shift(1)).sum() - 1
+        print(f"   Switches:  {switches}")
         
         print("\n✅ Strategy calculations complete")
         
         # Run SIP analysis
-        results, sip_data = self.run_sip_on_portfolio(df, 'Ratio Trend 75/25')
+        results, sip_data = self.run_sip_on_portfolio(df, 'Quarterly Alpha Rotation 100/0')
         
-        # Save portfolio data
+        # Save portfolio data (keep filename for dashboard compatibility)
         output_file = self.output_folder / "portfolio_ratio_trend_75_25.csv"
         df.to_csv(output_file, index=False)
         print(f"\n✅ Saved portfolio to: {output_file}")
@@ -332,7 +284,7 @@ class PortfolioStrategy:
 
 def main():
     """
-    Main execution function - Ratio Trend strategy analysis
+    Main execution function - Quarterly Alpha Rotation strategy
     """
     # Initialize strategy
     data_folder = Path(__file__).parent.parent / "data"
