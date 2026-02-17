@@ -301,6 +301,11 @@ async function loadPortfolioData() {
         // Render calendar returns
         renderCalendarReturns(data.calendar_returns);
 
+        // Render portfolio holdings log
+        if (data.portfolio_holdings) {
+            renderPortfolioHoldings(data.portfolio_holdings, 'portfolio-holdings-table');
+        }
+
     } catch (error) {
         console.error('Error loading portfolio data:', error);
         document.querySelectorAll('.kpi-value').forEach(el => {
@@ -537,6 +542,48 @@ function renderCalendarReturns(calendarReturns) {
     table.innerHTML = html;
 }
 
+function renderPortfolioHoldings(holdings, tableId) {
+    const table = document.getElementById(tableId);
+
+    const formatCurrency = (val) => {
+        if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
+        if (val >= 100000) return `₹${(val / 100000).toFixed(2)}L`;
+        if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K`;
+        return `₹${val.toFixed(0)}`;
+    };
+
+    let html = `
+        <thead>
+            <tr>
+                <th>Year</th>
+                <th>Month</th>
+                <th>Momentum</th>
+                <th>Value</th>
+                <th>Cash</th>
+                <th>Total Portfolio</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    holdings.forEach(row => {
+        const riskClass = row.Risk_On ? '' : 'cash-row';
+        html += `
+            <tr class="${riskClass}">
+                <td class="year-cell">${row.Year}</td>
+                <td>${row.Month}</td>
+                <td>${formatCurrency(row.Momentum_Holding)}</td>
+                <td>${formatCurrency(row.Value_Holding)}</td>
+                <td>${formatCurrency(row.Cash_Holding)}</td>
+                <td class="total-cell">${formatCurrency(row.Total_Portfolio)}</td>
+            </tr>
+        `;
+    });
+
+    html += '</tbody>';
+    table.innerHTML = html;
+}
+
 // ==========================================
 // ALLOCATION TABLE RENDERER
 // ==========================================
@@ -590,11 +637,11 @@ function renderAllocationTable(allocationSeries) {
             const data = dataByYear[year][monthIndex];
 
             if (data) {
-                const currentAllocation = `${data.momentum}-${data.value}`;
+                const currentAllocation = `${Math.round(data.momentum)}-${Math.round(data.value)}`;
                 const isChange = prevAllocation !== null && prevAllocation !== currentAllocation;
                 const cellClass = isChange ? 'allocation-change' : '';
 
-                tableHTML += `<td class="${cellClass}"><div>mom-${data.momentum}</div><div>val-${data.value}</div></td>`;
+                tableHTML += `<td class="${cellClass}"><div>mom-${Math.round(data.momentum)}</div><div>val-${Math.round(data.value)}</div></td>`;
                 prevAllocation = currentAllocation;
             } else {
                 tableHTML += '<td class="no-data">-</td>';
@@ -826,6 +873,11 @@ async function loadNifty500PortfolioData() {
         renderNifty500Attribution(data.charts.attribution);
         renderNifty500Alpha(data.charts.alpha);
         renderNifty500CalendarReturns(data.calendar_returns);
+
+        // Render portfolio holdings log
+        if (data.portfolio_holdings) {
+            renderPortfolioHoldings(data.portfolio_holdings, 'nifty500-portfolio-holdings-table');
+        }
 
     } catch (error) {
         console.error('Error loading Nifty 500 portfolio data:', error);

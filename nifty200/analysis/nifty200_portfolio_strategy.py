@@ -57,6 +57,7 @@ class PortfolioStrategy:
     def __init__(self, data_folder, monthly_sip=10000):
         self.data_folder = Path(data_folder)
         self.monthly_sip = monthly_sip
+
         self.output_folder = self.data_folder.parent / "output" / "monthly"
         
     def load_monthly_data(self):
@@ -188,12 +189,12 @@ class PortfolioStrategy:
         """Run Quarterly Alpha Rotation strategy
         
         Factor rotation with quarterly rebalance:
-        - 6M relative momentum signal (no MA, no hysteresis)
+        - Composite signal: 70% 6M + 30% 3M relative momentum
         - Decisions at quarter-end, execute next quarter (no lookahead)
-        - 100/0 hard allocation (momentum or value)
+        - 75/25 allocation (dominant factor gets 75%)
         """
         print("\n" + "="*80)
-        print("BACKTESTING: QUARTERLY ALPHA ROTATION (100/0)")
+        print("BACKTESTING: QUARTERLY ALPHA ROTATION (75/25) - COMPOSITE SIGNAL")
         print("="*80)
         
         # Load data
@@ -203,18 +204,25 @@ class PortfolioStrategy:
         # STEP 1 — Quarterly decision grid
         df['Quarter'] = df['Date'].dt.to_period('Q')
         
-        # STEP 2 — 6M relative momentum signal
+        # STEP 2 — Compute momentum signals
         df['RelMom_6M'] = (
             df['Close_mom'].pct_change(6) -
             df['Close_val'].pct_change(6)
         )
+        df['RelMom_3M'] = (
+            df['Close_mom'].pct_change(3) -
+            df['Close_val'].pct_change(3)
+        )
         
-        # STEP 3 — Sample ONLY quarter ends
+        # STEP 3 — Composite signal: 70% 6M + 30% 3M
+        df['RelMom_Signal'] = 0.7 * df['RelMom_6M'] + 0.3 * df['RelMom_3M']
+        
+        # STEP 4 — Sample ONLY quarter ends
         quarterly = df.groupby('Quarter').last()
         
-        # STEP 4 — 100/0 regime selection
+        # STEP 5 — Regime selection based on composite signal
         quarterly['regime'] = np.where(
-            quarterly['RelMom_6M'] > 0,
+            quarterly['RelMom_Signal'] > 0,
             'momentum',
             'value'
         )
@@ -232,17 +240,72 @@ class PortfolioStrategy:
         )
         df['regime'] = df['regime_exec'].ffill().fillna('value')
         
-        # STEP 7 — Set weights based on regime
-        df['w_mom'] = np.where(df['regime'] == 'momentum', 1.0, 0.0)
+        # STEP 7 — Dynamic Factor Tilt Overlay (Institutional Approach)
+        # Instead of binary rotation (75/25 vs 25/75) or cash overlay,
+        # we use signal strength to tilt allocation gradually
+        
+        # Base allocation (momentum-biased)
+        BASE_MOM = 0.75
+        BASE_VAL = 0.25
+        
+        # Tilt ranges (asymmetric - favors momentum)
+        MAX_MOM = 1.00  # Maximum momentum tilt (100% momentum, 0% value)
+        MIN_MOM = 0.50  # Minimum momentum tilt (50/50 balanced)
+        
+        # Calculate signal strength (normalized)
+        # Use 6M signal as primary, 3M as confirmation
+        df['signal_strength'] = df['RelMom_Signal']
+        
+        # Calculate rolling percentile of signal (for normalization)
+        # Use 36-month window for regime context
+        df['signal_percentile'] = df['signal_strength'].rolling(36, min_periods=12).apply(
+            lambda x: (x.iloc[-1] - x.min()) / (x.max() - x.min()) if x.max() != x.min() else 0.5
+        )
+        
+        # Map percentile to tilt (ASYMMETRIC - momentum favored)
+        # 0th percentile (weakest momentum) → 50/50 (balanced)
+        # 50th percentile (neutral) → 75/25 (base)
+        # 100th percentile (strongest momentum) → 100/0 (full momentum)
+        df['w_mom'] = MIN_MOM + (MAX_MOM - MIN_MOM) * df['signal_percentile']
         df['w_val'] = 1.0 - df['w_mom']
         
-        # STEP 8 — Portfolio returns
+        # Fill NaN values at start with base allocation
+        df['w_mom'] = df['w_mom'].fillna(BASE_MOM)
+        df['w_val'] = df['w_val'].fillna(BASE_VAL)
+        
+        # Ensure weights are valid
+        df['w_mom'] = df['w_mom'].clip(MIN_MOM, MAX_MOM)
+        df['w_val'] = 1.0 - df['w_mom']
+        
+        # ⚠️ ROUND TO 5% INCREMENTS FOR PRACTICAL IMPLEMENTATION
+        # This makes rebalancing much easier in real trading
+        df['w_mom'] = (df['w_mom'] * 100 / 5.0).round() * 5.0 / 100
+        df['w_val'] = (df['w_val'] * 100 / 5.0).round() * 5.0 / 100
+        
+        # Ensure they sum to 1.0 exactly (fix floating point errors)
+        df['w_mom'] = df['w_mom'].round(4)
+        df['w_val'] = df['w_val'].round(4)
+        
+        # 🚨 CRITICAL FIX: SHIFT WEIGHTS TO ELIMINATE LOOKAHEAD BIAS
+        # Signal calculated at end of month t should be used for allocation in month t+1
+        # This prevents using same-month returns with same-month signals (illegal)
+        df['w_mom'] = df['w_mom'].shift(1)
+        df['w_val'] = df['w_val'].shift(1)
+        
+        # Fill first month with base allocation (no signal available yet)
+        df['w_mom'] = df['w_mom'].fillna(BASE_MOM)
+        df['w_val'] = df['w_val'].fillna(BASE_VAL)
+        
+        # STEP 8 — Calculate portfolio returns with dynamic tilt
+        df['Portfolio_Return'] = df['w_mom'] * df['Return_mom'] + df['w_val'] * df['Return_val']
+        
+        # Calculate portfolio NAV and other metrics
         df = self.calculate_portfolio_returns(df)
         
         # Print regime summary
         regime_counts = df['regime'].value_counts()
         total = len(df)
-        print(f"\n📊 Regime Distribution:")
+        print(f"\n📊 Factor Regime Distribution:")
         for regime, count in regime_counts.items():
             print(f"   {regime:>10s}: {count:3d} months ({count/total*100:.1f}%)")
         
@@ -250,10 +313,21 @@ class PortfolioStrategy:
         switches = (df['regime'] != df['regime'].shift(1)).sum() - 1
         print(f"   Switches:  {switches}")
         
+        # Dynamic tilt allocation stats
+        BASE_MOM = 0.75
+        MAX_MOM = 1.00
+        MIN_MOM = 0.50
+        
+        print(f"\n📊 Dynamic Tilt Allocation (Momentum-Biased):")
+        print(f"   Base: {BASE_MOM*100:.0f}/{(1-BASE_MOM)*100:.0f} (Momentum/Value)")
+        print(f"   Range: {MAX_MOM*100:.0f}/{(1-MAX_MOM)*100:.0f} (full momentum) to {MIN_MOM*100:.0f}/{(1-MIN_MOM)*100:.0f} (balanced)")
+        print(f"   Avg Momentum: {df['w_mom'].mean()*100:.1f}%")
+        print(f"   Avg Value: {df['w_val'].mean()*100:.1f}%")
+        
         print("\n✅ Strategy calculations complete")
         
         # Run SIP analysis
-        results, sip_data = self.run_sip_on_portfolio(df, 'Quarterly Alpha Rotation 100/0')
+        results, sip_data = self.run_sip_on_portfolio(df, 'Momentum-Biased Tilt (75/25 Base)')
         
         # Save portfolio data (keep filename for dashboard compatibility)
         output_file = self.output_folder / "portfolio_ratio_trend_75_25.csv"

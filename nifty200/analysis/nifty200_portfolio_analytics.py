@@ -251,11 +251,11 @@ class PortfolioAnalytics:
             'value_dd': df['Val_Drawdown_Pct'].tolist()
         }
         
-        # Chart 4: Allocation Stack
+        # Chart 4: Allocation Stack (round to integers to avoid floating point errors)
         charts['allocation_series'] = {
             'dates': df['Date'].dt.strftime('%Y-%m-%d').tolist(),
-            'momentum': (df['w_mom'] * 100).tolist(),
-            'value': (df['w_val'] * 100).tolist(),
+            'momentum': (df['w_mom'] * 100).round(0).tolist(),
+            'value': (df['w_val'] * 100).round(0).tolist(),
             'regime': df['Regime'].tolist()
         }
         
@@ -300,6 +300,16 @@ class PortfolioAnalytics:
         if self.master_df is None:
             self.build_master_dataframe()
         
+        # Load portfolio holdings log if available
+        holdings_log = None
+        # Construct correct path: nifty200_portfolio_dashboard.json -> nifty200_portfolio_holdings_log.csv
+        output_path = Path(output_file)
+        holdings_file = output_path.parent / f"{output_path.stem.split('_')[0]}_portfolio_holdings_log.csv"
+        if holdings_file.exists():
+            holdings_df = pd.read_csv(holdings_file)
+            holdings_log = holdings_df.to_dict('records')
+            print(f"\n📊 Loaded portfolio holdings log: {len(holdings_log)} months")
+        
         dashboard_data = {
             'kpis': self.calculate_summary_kpis(),
             'calendar_returns': self.generate_calendar_returns(),
@@ -307,6 +317,10 @@ class PortfolioAnalytics:
             'regime_analysis': self.generate_regime_analysis(),
             'charts': self.generate_charts_data()
         }
+        
+        # Add holdings log if available
+        if holdings_log:
+            dashboard_data['portfolio_holdings'] = holdings_log
         
         # Save to file
         output_path = Path(output_file)
