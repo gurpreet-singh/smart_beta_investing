@@ -358,7 +358,7 @@ def main():
     print("="*80)
     
     # Input: Best strategy portfolio file
-    portfolio_file = Path(__file__).parent.parent / "output" / "monthly" / "portfolio_ratio_trend_75_25.csv"
+    portfolio_file = Path(__file__).parent.parent / "output" / "monthly" / "portfolio_simple_momentum.csv"
     
     if not portfolio_file.exists():
         print(f"\n❌ Portfolio file not found: {portfolio_file}")

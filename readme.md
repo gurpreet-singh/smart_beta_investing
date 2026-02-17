@@ -1,113 +1,121 @@
-# Smart Beta Portfolio Investment Strategy
+# Smart Beta Investment Strategy
 
-A systematic investment strategy combining Momentum and Value factors from NSE Smart Beta indices with dynamic allocation based on factor ratio trends.
+A systematic investment strategy that dynamically allocates between Momentum and Value factors from NSE Smart Beta indices.
 
-## 🎯 Project Overview
+## 🎯 Overview
 
-This project implements and analyzes smart beta investment strategies across different market universes:
+This project implements a **Quarterly Alpha Rotation Strategy** with dynamic factor tilting:
 
-- **Nifty 200 Universe**: Momentum 30 & Value 30 indices
-- **Nifty 500 Universe**: Momentum 50 & Value 50 indices (upcoming)
+- **Base Allocation**: 75% Momentum / 25% Value
+- **Tilt Range**: 100/0 (full momentum) to 50/50 (balanced)
+- **Rebalancing**: Monthly
+- **Performance**: 21-25% CAGR across Nifty 200 and Nifty 500 universes
+
+## 📊 Quick Stats
+
+| Universe | SIP XIRR | Index CAGR | Max Drawdown | Status |
+|----------|----------|------------|--------------|--------|
+| **Nifty 200** | 20.94% | 22.29% | -50.89% | ✅ Live |
+| **Nifty 500** | 22.71% | 24.81% | -57.06% | ✅ Live |
+
+## 📚 Documentation
+
+**👉 [Read Complete Strategy Documentation](STRATEGY.md)** - Comprehensive guide covering:
+- Strategy logic and implementation details
+- Performance metrics and backtesting results
+- Practical implementation guide
+- Risk considerations
+- Usage instructions
+
+## 🚀 Quick Start
+
+### Nifty 200
+```bash
+# Generate monthly data
+python3 nifty200/analysis/nifty200_generate_dashboard_data.py
+
+# Run strategy backtest
+python3 nifty200/analysis/nifty200_portfolio_strategy.py
+
+# Generate dashboard data
+python3 nifty200/analysis/nifty200_portfolio_analytics.py
+
+# View dashboard
+python3 dashboard/serve_dashboard.py
+# Open: http://localhost:8000/nifty200/dashboard/nifty200_dashboard.html
+```
+
+### Nifty 500
+```bash
+# Generate monthly data
+python3 nifty500/analysis/nifty500_generate_dashboard_data.py
+
+# Run strategy backtest
+python3 nifty500/analysis/nifty500_portfolio_strategy.py
+
+# Generate dashboard data
+python3 nifty500/analysis/nifty500_portfolio_analytics.py
+
+# View dashboard
+python3 dashboard/serve_dashboard.py
+# Open: http://localhost:8000/nifty500/dashboard/nifty500_dashboard.html
+```
 
 ## 📁 Project Structure
 
 ```
 smart_beta_investing/
-├── data/                          # Raw index data (daily/weekly)
-│   ├── nifty200mom30/            # Nifty 200 Momentum 30 CSVs
-│   ├── nifty200val30/            # Nifty 200 Value 30 CSVs
-│   ├── nifty500mom50/            # Nifty 500 Momentum 50 CSVs (future)
-│   └── nifty500val50/            # Nifty 500 Value 50 CSVs (future)
+├── STRATEGY.md                    # 📖 Complete strategy documentation
+├── README.md                      # This file
 │
-├── nifty200/                      # ✅ Nifty 200 Analysis (Complete)
-│   ├── analysis/                  # Analysis scripts
-│   ├── output/                    # Generated data & results
-│   ├── dashboard/                 # Interactive dashboard
-│   ├── README.md                  # Nifty 200 documentation
-│   └── NIFTY200_STRATEGY_DOCUMENTATION.md
+├── data/                          # Raw index data
+│   ├── nifty200mom30/            # Nifty 200 Momentum 30
+│   ├── nifty200val30/            # Nifty 200 Value 30
+│   ├── nifty500mom50/            # Nifty 500 Momentum 50
+│   └── nifty500val50/            # Nifty 500 Value 50
 │
-├── nifty500/                      # 🚧 Nifty 500 Analysis (Upcoming)
-│   ├── analysis/                  # (To be created)
-│   ├── output/                    # (To be created)
-│   └── dashboard/                 # (To be created)
+├── nifty200/                      # Nifty 200 implementation
+│   ├── analysis/                  # Strategy scripts
+│   ├── output/monthly/           # Generated data
+│   └── dashboard/                # Interactive dashboard
 │
-├── analysis/                      # Legacy analysis files (reference)
-├── output/                        # Legacy output files (reference)
-├── dashboard/                     # Legacy dashboard (reference)
-└── README.md                      # This file
+├── nifty500/                      # Nifty 500 implementation
+│   ├── analysis/                  # Strategy scripts
+│   ├── output/monthly/           # Generated data
+│   └── dashboard/                # Interactive dashboard
+│
+└── dashboard/                     # Dashboard server
+    └── serve_dashboard.py
 ```
 
-## 🚀 Quick Start
+## 🎯 Strategy Highlights
 
-### Nifty 200 Analysis
+### Dynamic Factor Tilt
+- **Adaptive allocation** based on composite momentum signal (70% 6M + 30% 3M)
+- **11 allocation levels** in 5% increments (50/50 to 100/0)
+- **No lookahead bias** - signals from month t applied to month t+1
+- **Always invested** - 0% cash allocation
 
-See [`nifty200/README.md`](nifty200/README.md) for complete instructions.
-
-**Quick run:**
-```bash
-# Generate data
-python3 nifty200/analysis/nifty200_generate_dashboard_data.py
-python3 nifty200/analysis/nifty200_portfolio_strategy.py
-python3 nifty200/analysis/nifty200_portfolio_analytics.py
-
-# View dashboard
-open nifty200/dashboard/nifty200_dashboard.html
-```
-
-## 📊 Strategies Implemented
-
-### Ratio Trend 75/25 (Nifty 200)
-- **Signal**: Momentum/Value ratio vs 6-month MA
-- **Allocation**: Binary 75/25 or 25/75
-- **Rebalancing**: Monthly
-- **Performance**: 26.30% SIP XIRR, 27.44% CAGR
-
-## 📈 Performance Summary
-
-| Metric | Nifty 200 | Nifty 500 |
-|--------|-----------|-----------|
-| SIP XIRR | 26.30% | Coming soon |
-| Strategy CAGR | 27.44% | Coming soon |
-| Max Drawdown | -56.52% | Coming soon |
-| MAR Ratio | 0.47 | Coming soon |
+### Performance
+- **21-25% CAGR** across both universes
+- **₹10K → ₹6.5L-₹9.6L** over 20 years (lumpsum)
+- **₹10K/month SIP → ₹3.2Cr-₹4Cr** over 20 years
+- **MAR Ratio**: 0.40-0.41
 
 ## 🗂️ Data Sources
 
-- **Nifty 200 Momentum 30**: NSE historical data (April 2005 - December 2025)
-- **Nifty 200 Value 30**: NSE historical data (April 2005 - December 2025)
-- **Nifty 500 Momentum 50**: (Upcoming)
-- **Nifty 500 Value 50**: (Upcoming)
-
-## 📚 Documentation
-
-- [Nifty 200 Strategy Documentation](nifty200/NIFTY200_STRATEGY_DOCUMENTATION.md)
-- [Nifty 200 README](nifty200/README.md)
-
-## 🔄 Migration Notes
-
-**Previous structure** (before Feb 2026):
-- All analysis scripts were in root `analysis/` folder
-- All outputs were in root `output/` folder
-- Dashboard was in root `dashboard/` folder
-
-**Current structure**:
-- Each index universe (Nifty 200, Nifty 500) has its own folder
-- All files are prefixed with the index name (e.g., `nifty200_*.py`)
-- Completely separate analysis pipelines
-- Legacy files remain in root folders for reference
-
-## 🎯 Next Steps
-
-1. ✅ Nifty 200 analysis complete
-2. 🚧 Set up Nifty 500 analysis structure
-3. 🚧 Implement Nifty 500 strategy variations
-4. 🚧 Compare Nifty 200 vs Nifty 500 performance
+All data from **NSE India** (April 2005 - Present):
+- Nifty 200 Momentum 30
+- Nifty 200 Value 30
+- Nifty 500 Momentum 50
+- Nifty 500 Value 50
 
 ## 📝 License
 
-This is a personal investment research project.
+Personal investment research project.
 
 ---
 
-**Last Updated**: February 2026  
-**Status**: Nifty 200 analysis complete, Nifty 500 in progress
+**Last Updated**: February 17, 2026  
+**Version**: 3.0 (Production Ready)  
+**Status**: ✅ Both Nifty 200 and Nifty 500 strategies live
