@@ -8,6 +8,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import json
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
@@ -117,7 +119,7 @@ class PortfolioAnalytics:
         final_value = df['Portfolio_Value'].iloc[-1]
         
         # Calculate XIRR (simplified)
-        from portfoliostrategy import calculate_xirr
+        from nifty200_portfolio_strategy import calculate_xirr
         cash_flows = [(row['Date'], -self.monthly_sip) for _, row in df.iterrows()]
         cash_flows.append((df['Date'].iloc[-1], final_value))
         sip_xirr = calculate_xirr(cash_flows)
@@ -155,16 +157,31 @@ class PortfolioAnalytics:
         return kpis
     
     def generate_calendar_returns(self):
-        """Generate calendar year returns heatmap data"""
+        """Generate calendar year returns comparison data (strategy vs individual indices)"""
         df = self.master_df
         
-        # Group by year and calculate annual returns
-        yearly_returns = df.groupby('Year')['Portfolio_Return'].apply(
+        # Strategy returns by year
+        strategy_returns = df.groupby('Year')['Portfolio_Return'].apply(
             lambda x: ((1 + x).prod() - 1) * 100
         ).reset_index()
-        yearly_returns.columns = ['Year', 'Return']
+        strategy_returns.columns = ['Year', 'Return']
         
-        return yearly_returns.to_dict('records')
+        # Momentum index returns by year
+        mom_returns = df.groupby('Year')['Return_mom'].apply(
+            lambda x: ((1 + x).prod() - 1) * 100
+        ).reset_index()
+        mom_returns.columns = ['Year', 'Mom_Return']
+        
+        # Value index returns by year
+        val_returns = df.groupby('Year')['Return_val'].apply(
+            lambda x: ((1 + x).prod() - 1) * 100
+        ).reset_index()
+        val_returns.columns = ['Year', 'Val_Return']
+        
+        # Merge all
+        merged = strategy_returns.merge(mom_returns, on='Year').merge(val_returns, on='Year')
+        
+        return merged.to_dict('records')
     
     def generate_allocation_histogram(self):
         """Generate allocation distribution data"""
@@ -335,7 +352,7 @@ def main():
         return
     
     # Output: Dashboard JSON
-    output_file = Path(__file__).parent.parent / "output" / "portfolio_dashboard.json"
+    output_file = Path(__file__).parent.parent / "output" / "nifty200_portfolio_dashboard.json"
     
     # Generate analytics
     analytics = PortfolioAnalytics(portfolio_file, monthly_sip=10000)

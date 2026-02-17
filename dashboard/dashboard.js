@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadIndicesData() {
     try {
-        const response = await fetch('../output/monthly/dashboard_data.json');
+        const response = await fetch('../nifty200/output/monthly/nifty200_dashboard_data.json');
         const data = await response.json();
 
 
@@ -156,7 +156,7 @@ function createIndexCard(index) {
 
 async function loadRatioChart() {
     try {
-        const response = await fetch('../output/weekly/ratio_chart.json');
+        const response = await fetch('../nifty200/output/weekly/ratio_chart.json');
         const chartData = await response.json();
 
         const chartDiv = document.getElementById('ratio-chart');
@@ -169,7 +169,7 @@ async function loadRatioChart() {
 
 async function loadIndividualIndexCharts() {
     try {
-        const response = await fetch('../output/dashboard_data.json');
+        const response = await fetch('../nifty200/output/nifty200_dashboard_data.json');
         const data = await response.json();
 
         if (!data.weekly_charts) {
@@ -289,7 +289,7 @@ function updateInsights(indices) {
 
 async function loadPortfolioData() {
     try {
-        const response = await fetch('../output/portfolio_dashboard.json');
+        const response = await fetch('../nifty200/output/nifty200_portfolio_dashboard.json');
         const data = await response.json();
 
         // Update KPI cards
@@ -935,32 +935,71 @@ function renderNifty500DrawdownChart(data) {
     Plotly.newPlot('nifty500-chart-drawdown', [strategyTrace, momTrace, valTrace], layout, { responsive: true });
 }
 
-function renderNifty500AllocationTable(data) {
+function renderNifty500AllocationTable(allocationSeries) {
     const container = document.getElementById('nifty500-allocation-table-container');
-    const recentData = data.dates.slice(-12).map((date, idx) => ({
-        date,
-        momentum: data.momentum.slice(-12)[idx],
-        value: data.value.slice(-12)[idx],
-        regime: data.regime.slice(-12)[idx]
-    }));
 
-    container.innerHTML = `
-        <table class="allocation-table">
-            <thead>
-                <tr><th>Date</th><th>Momentum</th><th>Value</th><th>Regime</th></tr>
-            </thead>
-            <tbody>
-                ${recentData.map(row => `
-                    <tr>
-                        <td>${row.date}</td>
-                        <td>${row.momentum.toFixed(0)}%</td>
-                        <td>${row.value.toFixed(0)}%</td>
-                        <td class="${row.regime.toLowerCase()}">${row.regime}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
+    // Organize data by year and month
+    const dataByYear = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    allocationSeries.dates.forEach((dateStr, index) => {
+        const date = new Date(dateStr);
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-11
+
+        if (!dataByYear[year]) {
+            dataByYear[year] = {};
+        }
+
+        const momValue = allocationSeries.momentum[index];
+        const valValue = allocationSeries.value[index];
+
+        dataByYear[year][month] = {
+            momentum: momValue,
+            value: valValue
+        };
+    });
+
+    // Create table HTML
+    let tableHTML = '<table class="allocation-table">';
+
+    // Header row
+    tableHTML += '<thead><tr><th class="year-col">Year</th>';
+    months.forEach(month => {
+        tableHTML += `<th>${month}</th>`;
+    });
+    tableHTML += '</tr></thead>';
+
+    // Body rows
+    tableHTML += '<tbody>';
+    const years = Object.keys(dataByYear).sort();
+
+    years.forEach(year => {
+        tableHTML += `<tr><td class="year-col">${year}</td>`;
+
+        let prevAllocation = null;
+
+        months.forEach((month, monthIndex) => {
+            const data = dataByYear[year][monthIndex];
+
+            if (data) {
+                const currentAllocation = `${data.momentum}-${data.value}`;
+                const isChange = prevAllocation !== null && prevAllocation !== currentAllocation;
+                const cellClass = isChange ? 'allocation-change' : '';
+
+                tableHTML += `<td class="${cellClass}"><div>mom-${data.momentum}</div><div>val-${data.value}</div></td>`;
+                prevAllocation = currentAllocation;
+            } else {
+                tableHTML += '<td class="no-data">-</td>';
+            }
+        });
+
+        tableHTML += '</tr>';
+    });
+
+    tableHTML += '</tbody></table>';
+
+    container.innerHTML = tableHTML;
 }
 
 function renderNifty500RollingReturns(data) {

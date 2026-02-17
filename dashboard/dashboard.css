@@ -767,8 +767,6 @@ body {
 
 .allocation-table-wrapper {
     overflow-x: auto;
-    overflow-y: auto;
-    max-height: 600px;
     padding: 1rem;
     background: var(--card-bg);
     border-radius: 12px;
@@ -866,9 +864,5 @@ body {
     .allocation-table td,
     .allocation-table th {
         padding: 0.5rem 0.25rem;
-    }
-
-    .allocation-table-wrapper {
-        max-height: 400px;
     }
 }

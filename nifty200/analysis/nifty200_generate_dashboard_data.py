@@ -13,7 +13,7 @@ from pathlib import Path
 # Add parent directory to path to import the module
 sys.path.insert(0, str(Path(__file__).parent))
 
-from nifty200betareturns import SIPAnalyzer
+from nifty200_sip_returns import SIPAnalyzer
 
 def get_weekly_closes(df):
     """Extract weekly close prices (last trading day of each week)"""
