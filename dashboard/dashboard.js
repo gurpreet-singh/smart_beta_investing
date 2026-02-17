@@ -580,10 +580,11 @@ function renderAllocationTable(allocationSeries) {
     tableHTML += '<tbody>';
     const years = Object.keys(dataByYear).sort();
 
+    // Track allocation across year boundaries so January transitions are detected
+    let prevAllocation = null;
+
     years.forEach(year => {
         tableHTML += `<tr><td class="year-col">${year}</td>`;
-
-        let prevAllocation = null;
 
         months.forEach((month, monthIndex) => {
             const data = dataByYear[year][monthIndex];
@@ -974,10 +975,11 @@ function renderNifty500AllocationTable(allocationSeries) {
     tableHTML += '<tbody>';
     const years = Object.keys(dataByYear).sort();
 
+    // Track allocation across year boundaries so January transitions are detected
+    let prevAllocation = null;
+
     years.forEach(year => {
         tableHTML += `<tr><td class="year-col">${year}</td>`;
-
-        let prevAllocation = null;
 
         months.forEach((month, monthIndex) => {
             const data = dataByYear[year][monthIndex];

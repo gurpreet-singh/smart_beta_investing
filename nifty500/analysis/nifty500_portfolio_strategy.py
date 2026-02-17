@@ -1,14 +1,16 @@
 """
-Dual-Factor Rotation Strategy - RATIO TREND (OPTIMAL)
+Dual-Factor Rotation Strategy - CONDITIONAL NEUTRAL + HYSTERESIS (v2)
 Dynamic allocation between Momentum 50 and Value 50 based on ratio trend
 Always invested, no cash - optimal risk-adjusted returns
 
-Strategy: Ratio Trend 75/25 with 2-Month Cooldown + 50/50 Transition
+Strategy: 3-State Conditional Neutral with Hysteresis (0.30% / 0.10%)
 - Compares Momentum/Value ratio to its 6-month moving average
-- If ratio > MA: 75% Momentum, 25% Value
-- If ratio < MA: 25% Momentum, 75% Value
-- After a switch, next full switch only after 2 months
-- During cooldown, if signal disagrees: 50/50 allocation
+- Uses ratio_diff = (Ratio - MA) / MA as normalized signal
+- Strong cross (|ratio_diff| > enter_band): immediate 75/25 switch
+- Weak zone (between exit and enter bands): conditional 50/50 neutral
+- Hysteresis: enter_band=0.30%, exit_band=0.10% prevents flip-flop
+- No cooldown delay, no confirmation lag — preserves early regime capture
+- Neutral is conditional (rare ~3% of time), not structural
 """
 
 import pandas as pd
@@ -100,57 +102,92 @@ class PortfolioStrategy:
         return df
     
     def signal_ratio_trend(self, df, ma_length=6):
-        """Ratio Trend Signal (OPTIMAL)
+        """Ratio Trend Signal with normalized ratio_diff
         
-        Favors Momentum when ratio is above its moving average
-        Natural whipsaw protection from MA smoothing
+        Computes (Ratio - MA) / MA as normalized signal for hysteresis bands.
         """
         df['Ratio_MA'] = df['Ratio'].rolling(ma_length).mean()
         df['Signal_Ratio'] = df['Ratio'] - df['Ratio_MA']
-        
-        # Binary signal: 1 = favor Momentum, 0 = favor Value
-        df['Signal_Binary'] = (df['Ratio'] > df['Ratio_MA']).astype(int)
+        df['Ratio_Diff'] = (df['Ratio'] - df['Ratio_MA']) / df['Ratio_MA']
         
         return df
     
-    def apply_allocation(self, df):
-        """Apply 75/25 allocation with 2-month cooldown and 50/50 transition.
+    def apply_allocation(self, df, enter_band=0.003, exit_band=0.001):
+        """Apply 3-state conditional neutral allocation with hysteresis.
         
-        After a full switch, the next full switch can only occur 2 months later.
-        During the cooldown month, if the signal disagrees with the current regime,
-        the allocation goes to 50/50 instead of hard-locking to the old allocation.
-        If the signal agrees during cooldown, normal 75/25 is maintained.
+        State machine with hysteresis bands:
+        - Enter Momentum: ratio_diff > +enter_band (0.30%)
+        - Stay Momentum:  ratio_diff > -exit_band (only exit below -0.10%)
+        - Enter Value:    ratio_diff < -enter_band (-0.30%)
+        - Stay Value:     ratio_diff < +exit_band (only exit above +0.10%)
+        - Neutral (50/50): conditional, only in weak zone between bands
+        
+        Key properties:
+        - Strong crosses go directly 75/25 (no delay)
+        - Hysteresis prevents flip-flop without time penalty
+        - No cooldown, no confirmation lag
+        - Neutral is rare (~3% of time), not structural
         """
-        signals = df['Signal_Binary'].values.copy()
-        n = len(signals)
+        n = len(df)
+        ratio_diff = df['Ratio_Diff'].values
         
         w_mom = np.zeros(n)
         w_val = np.zeros(n)
         
-        # Start with first signal's allocation
-        current_regime_signal = signals[0]
-        w_mom[0] = 0.75 if current_regime_signal == 1 else 0.25
-        w_val[0] = 1 - w_mom[0]
+        # State: 'momentum', 'value', 'neutral'
+        current_state = 'neutral'
         
-        months_since_switch = 999  # Allow first switch freely
-        
-        for i in range(1, n):
-            months_since_switch += 1
-            raw_signal = signals[i]
+        for i in range(n):
+            rd = ratio_diff[i]
             
-            if raw_signal != current_regime_signal:
-                # Signal wants to switch
-                if months_since_switch >= 2:
-                    # Cooldown expired → allow full switch
-                    current_regime_signal = raw_signal
-                    months_since_switch = 0
-                    w_mom[i] = 0.75 if current_regime_signal == 1 else 0.25
+            if np.isnan(rd):
+                # Before MA warmup → 50/50
+                w_mom[i] = 0.50
+                current_state = 'neutral'
+                w_val[i] = 0.50
+                continue
+            
+            if current_state == 'momentum':
+                # Stay in momentum unless ratio_diff drops below -exit_band
+                if rd < -exit_band:
+                    if rd < -enter_band:
+                        # Strong reversal → direct to Value
+                        current_state = 'value'
+                        w_mom[i] = 0.25
+                    else:
+                        # Weak exit → conditional neutral
+                        current_state = 'neutral'
+                        w_mom[i] = 0.50
                 else:
-                    # Still in cooldown → go 50/50
+                    # Still comfortably in Momentum
+                    w_mom[i] = 0.75
+                    
+            elif current_state == 'value':
+                # Stay in value unless ratio_diff rises above +exit_band
+                if rd > exit_band:
+                    if rd > enter_band:
+                        # Strong reversal → direct to Momentum
+                        current_state = 'momentum'
+                        w_mom[i] = 0.75
+                    else:
+                        # Weak exit → conditional neutral
+                        current_state = 'neutral'
+                        w_mom[i] = 0.50
+                else:
+                    # Still in Value
+                    w_mom[i] = 0.25
+                    
+            elif current_state == 'neutral':
+                # Only leave neutral on a strong signal (enter_band)
+                if rd > enter_band:
+                    current_state = 'momentum'
+                    w_mom[i] = 0.75
+                elif rd < -enter_band:
+                    current_state = 'value'
+                    w_mom[i] = 0.25
+                else:
+                    # Stay neutral — weak zone
                     w_mom[i] = 0.50
-            else:
-                # Signal agrees with current regime → normal allocation
-                w_mom[i] = 0.75 if current_regime_signal == 1 else 0.25
             
             w_val[i] = 1 - w_mom[i]
         
