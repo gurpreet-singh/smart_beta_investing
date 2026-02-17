@@ -185,59 +185,43 @@ class PortfolioStrategy:
         return results, sip_data
     
     def run_strategy(self):
-        """Run Quarterly Alpha Rotation strategy
+        """Run Monthly Alpha Rotation strategy
         
-        Institutional-style factor rotation:
+        Factor rotation with monthly rebalance:
         - 6M relative momentum signal (no MA, no hysteresis)
-        - Decisions only at quarter boundaries
+        - Monthly decision + 1-month execution delay (no lookahead)
         - 100/0 hard allocation (momentum or value)
-        - 1-month execution delay (no lookahead)
-        - Calendar acts as the smoother
+        - Signal at month t → execute at month t+1
         """
         print("\n" + "="*80)
-        print("BACKTESTING: QUARTERLY ALPHA ROTATION (100/0)")
+        print("BACKTESTING: MONTHLY ALPHA ROTATION (100/0)")
         print("="*80)
         
         # Load data
         df = self.load_monthly_data()
         df = self.calculate_returns(df)
         
-        # STEP 1 — Quarterly decision grid
-        df['Quarter'] = df['Date'].dt.to_period('Q')
-        
-        # STEP 2 — 6M relative momentum signal (raw, no MA smoothing)
+        # STEP 1 — 6M relative momentum signal
         df['RelMom_6M'] = (
             df['Close_mom'].pct_change(6) -
             df['Close_val'].pct_change(6)
         )
         
-        # STEP 3 — Sample ONLY quarter ends
-        quarterly = df.groupby('Quarter').last()
-        
-        # STEP 4 — 100/0 regime selection (no neutral, hard switch)
-        quarterly['regime'] = np.where(
-            quarterly['RelMom_6M'] > 0,
+        # STEP 2 — Regime decision each month
+        df['regime'] = np.where(
+            df['RelMom_6M'] > 0,
             'momentum',
             'value'
         )
         
-        # STEP 5 — Forward fill regime to monthly rows
-        df = df.merge(
-            quarterly[['regime']],
-            left_on='Quarter',
-            right_index=True,
-            how='left'
-        )
-        df['regime'] = df['regime'].ffill()
-        
-        # STEP 6 — Execute next month (no lookahead)
+        # STEP 3 — Shift by 1 month (signal at t, execute at t+1, no lookahead)
         df['regime'] = df['regime'].shift(1).fillna('value')
         
-        # STEP 7 — Set weights based on regime
+        # STEP 4 — Set weights based on regime
         df['w_mom'] = np.where(df['regime'] == 'momentum', 1.0, 0.0)
         df['w_val'] = 1.0 - df['w_mom']
         
-        # STEP 8 — Portfolio returns
+        # STEP 5 — Portfolio returns
         df = self.calculate_portfolio_returns(df)
         
         # Print regime summary
@@ -254,7 +238,7 @@ class PortfolioStrategy:
         print("\n✅ Strategy calculations complete")
         
         # Run SIP analysis
-        results, sip_data = self.run_sip_on_portfolio(df, 'Quarterly Alpha Rotation 100/0')
+        results, sip_data = self.run_sip_on_portfolio(df, 'Monthly Alpha Rotation 100/0')
         
         # Save portfolio data (keep filename for dashboard compatibility)
         output_file = self.output_folder / "portfolio_ratio_trend_75_25.csv"
