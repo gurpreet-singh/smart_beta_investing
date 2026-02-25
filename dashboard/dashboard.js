@@ -461,13 +461,13 @@ function renderPortfolioCharts(charts) {
     renderAllocationTable(charts.allocation_series);
 
 
-    // Chart 5: Rolling Returns
+    // Chart 5: Returns
     const rolling3yTrace = {
         x: charts.rolling_returns.dates,
         y: charts.rolling_returns.rolling_3y,
         type: 'scatter',
         mode: 'lines',
-        name: '3Y Rolling CAGR',
+        name: '3Y CAGR',
         line: { color: '#3b82f6', width: 2 }
     };
 
@@ -476,7 +476,7 @@ function renderPortfolioCharts(charts) {
         y: charts.rolling_returns.rolling_5y,
         type: 'scatter',
         mode: 'lines',
-        name: '5Y Rolling CAGR',
+        name: '5Y CAGR',
         line: { color: '#f59e0b', width: 2 }
     };
 
@@ -1094,7 +1094,7 @@ function renderNifty500RollingReturns(data) {
         y: data.rolling_3y,
         type: 'scatter',
         mode: 'lines',
-        name: '3-Year Rolling',
+        name: '3-Year CAGR',
         line: { color: '#3b82f6', width: 2 }
     };
 
@@ -1103,7 +1103,7 @@ function renderNifty500RollingReturns(data) {
         y: data.rolling_5y,
         type: 'scatter',
         mode: 'lines',
-        name: '5-Year Rolling',
+        name: '5-Year CAGR',
         line: { color: '#10b981', width: 2 }
     };
 
@@ -1299,7 +1299,7 @@ function renderCAGRChart(containerId, dates, values, periodLabel, lineColor, fil
         y: values,
         type: 'scatter',
         mode: 'lines',
-        name: `${periodLabel} Rolling CAGR`,
+        name: `${periodLabel} CAGR`,
         line: { color: lineColor, width: 2 },
         fill: 'tozeroy',
         fillcolor: fillColor,

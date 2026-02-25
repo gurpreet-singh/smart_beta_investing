@@ -417,7 +417,7 @@ function renderPortfolioCharts(charts) {
         y: charts.rolling_returns.rolling_3y,
         type: 'scatter',
         mode: 'lines',
-        name: '3Y Rolling CAGR',
+        name: '3Y CAGR',
         line: { color: '#3b82f6', width: 2 }
     };
 
@@ -426,7 +426,7 @@ function renderPortfolioCharts(charts) {
         y: charts.rolling_returns.rolling_5y,
         type: 'scatter',
         mode: 'lines',
-        name: '5Y Rolling CAGR',
+        name: '5Y CAGR',
         line: { color: '#f59e0b', width: 2 }
     };
 
