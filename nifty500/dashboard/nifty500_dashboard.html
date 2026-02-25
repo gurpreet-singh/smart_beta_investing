@@ -101,6 +101,15 @@
 
         <!-- Tab Content: Portfolio Strategy -->
         <div id="portfolio-tab" class="tab-content">
+            <section class="strategy-description">
+                <h2>Strategy Overview</h2>
+                <p>This strategy dynamically allocates between the Momentum 30 and Value 30 indices based on a quarterly
+                    3‑month momentum signal. Each month we compute the 3‑month percentage return of the Momentum index.
+                    If the return is ≥ 20 % we switch to 100 % Momentum; if the return is ≤ ‑15 % we switch to 100 %
+                    Value. Otherwise we stay in the previous regime. The allocation decision is applied with a one‑month
+                    lag to avoid look‑ahead bias, resulting in binary weights (either fully Momentum or fully Value)
+                    that are rebalanced monthly.</p>
+            </section>
             <!-- KPI Cards -->
             <section class="kpi-section">
                 <h2 class="section-title">Portfolio Performance</h2>
