@@ -26,8 +26,10 @@
         <!-- Tab Navigation -->
         <nav class="tab-nav">
             <button class="tab-button active" data-tab="indices">📊 Nifty 200 Indices</button>
+            <button class="tab-button" data-tab="returns-analysis">📉 Nifty 200 Returns</button>
             <button class="tab-button" data-tab="portfolio">🎯 Nifty 200 Strategy</button>
             <button class="tab-button" data-tab="nifty500-indices">📈 Nifty 500 Indices</button>
+            <button class="tab-button" data-tab="nifty500-returns">📉 Nifty 500 Returns</button>
             <button class="tab-button" data-tab="nifty500-portfolio">💎 Nifty 500 Strategy</button>
         </nav>
 
@@ -345,6 +347,168 @@
                 </div>
             </section>
         </div>
+        <!-- Tab Content: Returns Analysis -->
+        <div id="returns-analysis-tab" class="tab-content">
+
+            <!-- Header -->
+            <section class="kpi-section">
+                <h2 class="section-title">📉 Nifty 200 Rolling CAGR Analysis (2005 – Present)</h2>
+                <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1.5rem; padding:0 0.5rem;">
+                    Rolling CAGR calculated for every month-end — shows the annualised return you would have earned
+                    if you had invested at that exact point in time and held for the respective period.
+                </p>
+            </section>
+
+            <!-- ── MOMENTUM SECTION ── -->
+            <section class="indices-section">
+                <h2 class="section-title" style="color:#8b5cf6;">⚡ Nifty 200 Momentum 30 Index — Rolling CAGR</h2>
+            </section>
+
+            <!-- Momentum: 10Y & 5Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum — 10 Year Rolling CAGR</h3>
+                        <div id="ra-mom-10y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum — 5 Year Rolling CAGR</h3>
+                        <div id="ra-mom-5y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Momentum: 3Y & 1Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum — 3 Year Rolling CAGR</h3>
+                        <div id="ra-mom-3y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum — 1 Year Rolling CAGR</h3>
+                        <div id="ra-mom-1y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── VALUE SECTION ── -->
+            <section class="indices-section" style="margin-top:2rem;">
+                <h2 class="section-title" style="color:#10b981;">💎 Nifty 200 Value 30 Index — Rolling CAGR</h2>
+            </section>
+
+            <!-- Value: 10Y & 5Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value — 10 Year Rolling CAGR</h3>
+                        <div id="ra-val-10y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value — 5 Year Rolling CAGR</h3>
+                        <div id="ra-val-5y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Value: 3Y & 1Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value — 3 Year Rolling CAGR</h3>
+                        <div id="ra-val-3y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value — 1 Year Rolling CAGR</h3>
+                        <div id="ra-val-1y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+        <!-- /returns-analysis-tab -->
+
+        <!-- Tab Content: Nifty 500 Returns Analysis -->
+        <div id="nifty500-returns-tab" class="tab-content">
+
+            <!-- Header -->
+            <section class="kpi-section">
+                <h2 class="section-title">📉 Nifty 500 Rolling CAGR Analysis (2005 – Present)</h2>
+                <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1.5rem; padding:0 0.5rem;">
+                    Rolling CAGR calculated for every month-end — shows the annualised return you would have earned
+                    if you had invested at that exact point in time and held for the respective period.
+                </p>
+            </section>
+
+            <!-- ── MOMENTUM SECTION ── -->
+            <section class="indices-section">
+                <h2 class="section-title" style="color:#8b5cf6;">⚡ Nifty 500 Momentum 50 Index — Rolling CAGR</h2>
+            </section>
+
+            <!-- Momentum: 10Y & 5Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum 50 — 10 Year Rolling CAGR</h3>
+                        <div id="ra-n500-mom-10y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum 50 — 5 Year Rolling CAGR</h3>
+                        <div id="ra-n500-mom-5y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Momentum: 3Y & 1Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum 50 — 3 Year Rolling CAGR</h3>
+                        <div id="ra-n500-mom-3y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Momentum 50 — 1 Year Rolling CAGR</h3>
+                        <div id="ra-n500-mom-1y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── VALUE SECTION ── -->
+            <section class="indices-section" style="margin-top:2rem;">
+                <h2 class="section-title" style="color:#10b981;">💎 Nifty 500 Value 50 Index — Rolling CAGR</h2>
+            </section>
+
+            <!-- Value: 10Y & 5Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value 50 — 10 Year Rolling CAGR</h3>
+                        <div id="ra-n500-val-10y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value 50 — 5 Year Rolling CAGR</h3>
+                        <div id="ra-n500-val-5y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Value: 3Y & 1Y -->
+            <section class="charts-section">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value 50 — 3 Year Rolling CAGR</h3>
+                        <div id="ra-n500-val-3y" class="chart-plot"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Value 50 — 1 Year Rolling CAGR</h3>
+                        <div id="ra-n500-val-1y" class="chart-plot"></div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+        <!-- /nifty500-returns-tab -->
+
         <footer class="footer">
             <p>Data: NSE India | Analysis Period: April 2005 - December 2025 | Monthly SIP: ₹10,000</p>
             <p>Past performance is not indicative of future results. This is for educational purposes only.</p>

@@ -60,6 +60,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }, 100);
             }
+
+            if (targetTab === 'returns-analysis') {
+                setTimeout(() => {
+                    const chartIds = [
+                        'ra-mom-10y', 'ra-mom-5y', 'ra-mom-3y', 'ra-mom-1y',
+                        'ra-val-10y', 'ra-val-5y', 'ra-val-3y', 'ra-val-1y'
+                    ];
+                    chartIds.forEach(id => {
+                        const elem = document.getElementById(id);
+                        if (elem && elem.layout) {
+                            Plotly.Plots.resize(elem);
+                        }
+                    });
+                }, 100);
+            }
+
+            if (targetTab === 'nifty500-returns') {
+                setTimeout(() => {
+                    const chartIds = [
+                        'ra-n500-mom-10y', 'ra-n500-mom-5y', 'ra-n500-mom-3y', 'ra-n500-mom-1y',
+                        'ra-n500-val-10y', 'ra-n500-val-5y', 'ra-n500-val-3y', 'ra-n500-val-1y'
+                    ];
+                    chartIds.forEach(id => {
+                        const elem = document.getElementById(id);
+                        if (elem && elem.layout) {
+                            Plotly.Plots.resize(elem);
+                        }
+                    });
+                }, 100);
+            }
         });
     });
 
@@ -68,6 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPortfolioData();
     loadNifty500IndicesData();
     loadNifty500PortfolioData();
+    loadReturnsAnalysis();
+    loadNifty500ReturnsAnalysis();
 });
 
 // ==========================================
@@ -1205,4 +1237,195 @@ function renderNifty500CalendarReturns(returns) {
 
     html += '</tbody>';
     table.innerHTML = html;
+}
+
+// ==========================================
+// RETURNS ANALYSIS TAB
+// ==========================================
+
+async function loadReturnsAnalysis() {
+    try {
+        const response = await fetch('../nifty200/output/nifty200_returns_analysis.json');
+        const data = await response.json();
+
+        const CHART_DEFS = [
+            // [containerId, period label, series key, title colour, fill colour]
+            ['ra-mom-10y', '10Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-mom-5y', '5Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-mom-3y', '3Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-mom-1y', '1Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-val-10y', '10Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+            ['ra-val-5y', '5Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+            ['ra-val-3y', '3Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+            ['ra-val-1y', '1Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+        ];
+
+        CHART_DEFS.forEach(([containerId, period, indexKey, lineColor, fillColor]) => {
+            const series = data[indexKey][period];
+            if (!series || !series.dates || series.dates.length === 0) {
+                document.getElementById(containerId).innerHTML =
+                    '<p style="color:#94a3b8;padding:2rem;">Insufficient data for this period.</p>';
+                return;
+            }
+            renderCAGRChart(containerId, series.dates, series.values, period, lineColor, fillColor);
+        });
+
+    } catch (error) {
+        console.error('Error loading returns analysis data:', error);
+        ['ra-mom-10y', 'ra-mom-5y', 'ra-mom-3y', 'ra-mom-1y',
+            'ra-val-10y', 'ra-val-5y', 'ra-val-3y', 'ra-val-1y'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<p style="color:#ef4444;padding:2rem;">Error loading chart data.</p>';
+            });
+    }
+}
+
+function renderCAGRChart(containerId, dates, values, periodLabel, lineColor, fillColor) {
+    // Zero reference line
+    const zeroLine = {
+        x: [dates[0], dates[dates.length - 1]],
+        y: [0, 0],
+        type: 'scatter',
+        mode: 'lines',
+        name: '0%',
+        line: { color: '#475569', width: 1, dash: 'dot' },
+        showlegend: false,
+        hoverinfo: 'none'
+    };
+
+    // CAGR series
+    const cagrTrace = {
+        x: dates,
+        y: values,
+        type: 'scatter',
+        mode: 'lines',
+        name: `${periodLabel} Rolling CAGR`,
+        line: { color: lineColor, width: 2 },
+        fill: 'tozeroy',
+        fillcolor: fillColor,
+        hovertemplate:
+            '<b>Month:</b> %{x}<br>' +
+            `<b>${periodLabel} CAGR:</b> %{y:.2f}%<br>` +
+            '<extra></extra>'
+    };
+
+    // Compute stats for annotations
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const minV = Math.min(...values);
+    const maxV = Math.max(...values);
+
+    // Average reference line
+    const avgLine = {
+        x: [dates[0], dates[dates.length - 1]],
+        y: [avg, avg],
+        type: 'scatter',
+        mode: 'lines',
+        name: `Avg ${avg.toFixed(1)}%`,
+        line: { color: '#f59e0b', width: 1.5, dash: 'dash' },
+        hovertemplate: `<b>Average:</b> ${avg.toFixed(2)}%<extra></extra>`
+    };
+
+    const layout = {
+        autosize: true,
+        paper_bgcolor: '#1e293b',
+        plot_bgcolor: '#1e293b',
+        font: { color: '#f1f5f9', family: 'Inter, sans-serif', size: 12 },
+        xaxis: {
+            title: '',
+            showgrid: true,
+            gridcolor: '#334155',
+            color: '#94a3b8',
+            zeroline: false,
+            tickangle: -30
+        },
+        yaxis: {
+            title: 'CAGR (%)',
+            showgrid: true,
+            gridcolor: '#334155',
+            color: '#94a3b8',
+            zeroline: false,
+            tickformat: '.1f',
+            ticksuffix: '%'
+        },
+        hovermode: 'x unified',
+        hoverlabel: {
+            bgcolor: '#0f172a',
+            bordercolor: '#475569',
+            font: { size: 13, family: 'Inter, sans-serif', color: '#f1f5f9' }
+        },
+        margin: { l: 60, r: 20, t: 30, b: 50 },
+        showlegend: true,
+        legend: {
+            orientation: 'h',
+            x: 0.5,
+            xanchor: 'center',
+            y: 1.08,
+            yanchor: 'bottom',
+            bgcolor: 'rgba(15,23,42,0.7)',
+            bordercolor: '#334155',
+            borderwidth: 1,
+            font: { size: 11 }
+        },
+        annotations: [
+            {
+                xref: 'paper', yref: 'y',
+                x: 1.01, y: maxV,
+                xanchor: 'left', yanchor: 'middle',
+                text: `Max: ${maxV.toFixed(1)}%`,
+                showarrow: false,
+                font: { color: '#34d399', size: 10 }
+            },
+            {
+                xref: 'paper', yref: 'y',
+                x: 1.01, y: minV,
+                xanchor: 'left', yanchor: 'middle',
+                text: `Min: ${minV.toFixed(1)}%`,
+                showarrow: false,
+                font: { color: '#f87171', size: 10 }
+            }
+        ]
+    };
+
+    const config = { responsive: true, displayModeBar: true };
+    Plotly.newPlot(containerId, [zeroLine, cagrTrace, avgLine], layout, config);
+}
+
+// ==========================================
+// NIFTY 500 RETURNS ANALYSIS TAB
+// ==========================================
+
+async function loadNifty500ReturnsAnalysis() {
+    try {
+        const response = await fetch('../nifty500/output/nifty500_returns_analysis.json');
+        const data = await response.json();
+
+        const CHART_DEFS = [
+            ['ra-n500-mom-10y', '10Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-n500-mom-5y', '5Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-n500-mom-3y', '3Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-n500-mom-1y', '1Y', 'momentum', '#8b5cf6', 'rgba(139,92,246,0.15)'],
+            ['ra-n500-val-10y', '10Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+            ['ra-n500-val-5y', '5Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+            ['ra-n500-val-3y', '3Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+            ['ra-n500-val-1y', '1Y', 'value', '#10b981', 'rgba(16,185,129,0.15)'],
+        ];
+
+        CHART_DEFS.forEach(([containerId, period, indexKey, lineColor, fillColor]) => {
+            const series = data[indexKey][period];
+            if (!series || !series.dates || series.dates.length === 0) {
+                document.getElementById(containerId).innerHTML =
+                    '<p style="color:#94a3b8;padding:2rem;">Insufficient data for this period.</p>';
+                return;
+            }
+            renderCAGRChart(containerId, series.dates, series.values, period, lineColor, fillColor);
+        });
+
+    } catch (error) {
+        console.error('Error loading Nifty 500 returns analysis data:', error);
+        ['ra-n500-mom-10y', 'ra-n500-mom-5y', 'ra-n500-mom-3y', 'ra-n500-mom-1y',
+            'ra-n500-val-10y', 'ra-n500-val-5y', 'ra-n500-val-3y', 'ra-n500-val-1y'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<p style="color:#ef4444;padding:2rem;">Error loading chart data.</p>';
+            });
+    }
 }
